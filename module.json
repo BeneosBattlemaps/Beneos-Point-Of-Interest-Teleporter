@@ -8,6 +8,9 @@
 			"email": "zeel02@gmail.com",
 			"url": "https://github.com/zeel01",
 			"discord": "zeel#4200"
+		}, 
+		{
+			"name": "Beneos"
 		}
 	],
 	"version": "0.4.0",
@@ -38,17 +41,17 @@
 			"path": "lang/fr.json"
 		}
 	],
-	"manifest": "https://github.com/zeel01/poi-teleport/releases/latest/download/module.json",
-	"url": "https://github.com/zeel01/poi-teleport",
+	"manifest": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/module.json",
+	"url": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter",
 	"download": "https://github.com/zeel01/poi-teleport/releases/latest/download/poi-teleport.zip",
-	"readme": "https://github.com/zeel01/poi-teleport/blob/master/readme.md",
-	"bugs": "https://github.com/zeel01/poi-teleport/issues",
-	"changelog": "https://github.com/zeel01/poi-teleport/releases",
-	"license": "https://github.com/zeel01/poi-teleport/blob/master/LICENSE",
+	"readme": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/readme.md",
+	"bugs": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/issues",
+	"changelog": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/releases",
+	"license": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/LICENSE",
 	"media": [
 		{
 			"type": "cover",
-			"link": "https://raw.githubusercontent.com/zeel01/poi-teleport/master/cover.png"
+			"link": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/blob/main/cover.png?raw=true"
 		},
 		{
 			"type": "icon",
