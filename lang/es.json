@@ -1,0 +1,10 @@
+{
+	"I18N.LANGUAGE": "Español",
+	"I18N.MAINTAINERS": "sparkcity, @Viriato139ac#0342",
+	
+	"poitp.name": "Teleportador a punto de interés",
+	"poitp.createNote": "Crear notas de escena",
+	"poitp.activate": "Activar escena",
+	"poitp.view": "Ver escena",
+	"poitp.toggleNav": "Alternar navegación"
+}
