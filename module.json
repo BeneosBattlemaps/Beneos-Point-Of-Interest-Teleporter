@@ -43,7 +43,7 @@
 	],
 	"manifest": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/module.json",
 	"url": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter",
-	"download": "https://github.com/zeel01/poi-teleport/releases/latest/download/poi-teleport.zip",
+	"download": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/archive/refs/tags/v0.4.0.zip",
 	"readme": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/readme.md",
 	"bugs": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/issues",
 	"changelog": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/releases",
