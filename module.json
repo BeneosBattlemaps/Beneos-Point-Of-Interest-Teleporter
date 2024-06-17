@@ -52,11 +52,11 @@
 	"media": [
 		{
 			"type": "cover",
-			"link": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/blob/main/cover.png?raw=true"
+			"url": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/blob/main/cover.png?raw=true"
 		},
 		{
 			"type": "icon",
-			"link": "https://avatars2.githubusercontent.com/u/1721836"
+			"url": "https://avatars2.githubusercontent.com/u/1721836"
 		}
 	]
 }
