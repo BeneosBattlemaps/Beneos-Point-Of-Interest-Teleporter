@@ -146,7 +146,14 @@ class PointOfInterestTeleporter {
 	 * @memberof PointOfInterestTeleporter
 	 */
 	static async checkNote(note) {
-		const scene = game.scenes.find(s => s.journal?.id == note?.entry?.id);
+		//Deprecated since v10 : const scene = game.scenes.find(s => s.journal?.id == note?.entry?.id);
+    // Below fix comes from https://github.com/zeel01/poi-teleport/pull/16/commits/d7e47a79ba5ba30c505755836f5d81bd7d1464c1
+    let scene;
+
+		if(note?.document?.pageId != null){
+			scene = game.scenes.find(s => (s.journalEntryPage != null && s.journalEntryPage == note?.document?.pageId));
+		}else{
+			scene = game.scenes.find(s => (s.journalEntryPage == null && s.journal?.id == note?.entry?.id));
 
 		if (!scene) return;
 		if (!await this.waitFor(note, "mouseInteractionManager", 60)) return;
