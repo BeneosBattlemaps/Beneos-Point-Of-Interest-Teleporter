@@ -344,7 +344,8 @@ class PoiTpHUD extends BasePlaceableHUD {
 	setPosition() {
 		const position = {
 			left: this.object.x,
-			top: this.object.y
+			top: this.object.y,
+      "font-size": this.poitp.note.size / 2 + "px" // Fix #2
 		};
 		this.element.css(position);
 	}
