@@ -43,6 +43,11 @@
 			"lang": "fr",
 			"name": "French",
 			"path": "lang/fr.json"
+		},
+		{
+			"lang": "pt",
+			"name": "Português",
+			"path": "lang/pt.json"
 		}
 	],
 	"readme": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/readme.md",
