@@ -1,0 +1,8 @@
+{
+	"poitp.name": "Point of Interest Teleporter",
+	"poitp.createNote": "Szenen-Notes erstellen",
+	"poitp.activate": "Szene aktivieren",
+	"poitp.view": "Szene ansehen",
+	"poitp.toggleNav": "Zur Navi-Leiste hinzufügen",
+	"poitp.preLoadScene": "Szene vorladen"
+}

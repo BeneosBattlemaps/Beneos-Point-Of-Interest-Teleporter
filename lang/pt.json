@@ -1,0 +1,8 @@
+{
+	"poitp.name": "Point of Interest Teleporter",
+	"poitp.createNote": "Criar Notas de Cena",
+	"poitp.activate": "Ativar Cena",
+	"poitp.view": "Ver Cena",
+	"poitp.toggleNav": "Alternar Navegação",
+	"poitp.preLoadScene": "Pré-carregar Cena"
+}
