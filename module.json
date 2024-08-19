@@ -2,7 +2,7 @@
 	"id": "poi-teleport",
 	"title": "Point of Interest Teleporter, by Beneos",
 	"description": "Activate and view scenes directly from map notes.",
-	"url": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter",
+	"url": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter",
 	"manifest": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/module.json",
 	"download": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/archive/refs/tags/v0.4.3.zip",
 	"authors": [
