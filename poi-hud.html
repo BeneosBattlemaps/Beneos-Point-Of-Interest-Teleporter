@@ -1,9 +1,9 @@
 <div id="poi-tp-ctx-menu">
 	<ul class="poi-menu-list">
 	{{#each options as |option|}}
-		<li class="poi-menu-option" data-trigger="{{option.trigger}}">
+		<li class="poi-menu-option" >
 			{{{option.icon}}}
-			<span class="poi-option-title">{{localize option.title}}</span>
+			<span class="poi-option-title" data-action="executeOption" data-trigger="{{option.trigger}}">{{localize option.title}}</span>
 		</li>
 	{{/each}}
 	</ul>

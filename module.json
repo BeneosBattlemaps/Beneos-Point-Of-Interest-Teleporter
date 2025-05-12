@@ -11,17 +11,17 @@
 			"email": "zeel02@gmail.com",
 			"url": "https://github.com/zeel01",
 			"discord": "zeel#4200"
-		}, 
+		},
 		{
 			"name": "Beneos"
 		}
 	],
-	"version": "0.4.3",
+	"version": "13.0.0",
 	"compatibility": {
-		"minimum": 11,
-		"verified": 12
+		"minimum": 13,
+		"verified": 13
 	},
-	
+
 	"scripts": [
 		"poi-teleport.js"
 	],
