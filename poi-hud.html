@@ -1,9 +1,10 @@
 <div id="poi-tp-ctx-menu">
 	<ul class="poi-menu-list">
 	{{#each options as |option|}}
-		<li class="poi-menu-option" >
+		<li class="poi-menu-option {{#if option.disabled}}disabled{{/if}} {{#if option.error}}error{{/if}} {{#if option.info}}info{{/if}}"
+			{{#unless option.disabled}}data-action="executeOption" data-trigger="{{option.trigger}}"{{/unless}}>
 			{{{option.icon}}}
-			<span class="poi-option-title" data-action="executeOption" data-trigger="{{option.trigger}}">{{localize option.title}}</span>
+			<span class="poi-option-title">{{#if option.rawTitle}}{{option.title}}{{else}}{{localize option.title}}{{/if}}</span>
 		</li>
 	{{/each}}
 	</ul>

@@ -1,10 +1,10 @@
 {
 	"id": "poi-teleport",
 	"title": "Point of Interest Teleporter, by Beneos",
-	"description": "Activate and view scenes directly from map notes.",
-	"url": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter",
+	"description": "Activate and view scenes directly from map notes. Includes destination validation, release detection, and audit tool.",
+	"url": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter",
 	"manifest": "https://raw.githubusercontent.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/main/module.json",
-	"download": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/archive/refs/tags/v13.0.0.zip",
+	"download": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/archive/refs/tags/v13.0.1.zip",
 	"authors": [
 		{
 			"name": "zeel",
@@ -16,17 +16,19 @@
 			"name": "Beneos"
 		}
 	],
-	"version": "13.0.0",
+	"version": "13.0.1",
 	"compatibility": {
 		"minimum": 13,
 		"verified": 13
 	},
 
 	"scripts": [
-		"poi-teleport.js"
+		"poi-teleport.js",
+		"poi-audit.js"
 	],
 	"styles": [
-		"poi-teleport.css"
+		"poi-teleport.css",
+		"poi-audit.css"
 	],
 	"languages": [
 		{

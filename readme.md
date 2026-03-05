@@ -1,19 +1,48 @@
 # Point of Interest Teleporter
-![Example](cover.png)
 
-**Forked from https://github.com/zeel01/poi-teleport with the author authorization on june 2024.**
+Activate, view, and preload scenes directly from map notes in Foundry VTT.
 
-**Beneos is now the official maintener of Point of Interest Teleporter module.**
+## Features
 
-Create map pins that can be used to navigate between scenes. When there is a map note for a journal entry, and that entry is the Scene Notes for a scene, the map note gains a context menu. This menu has options to activate, view, or toggle navigation for that scene.
+### Core Teleportation
+- **Right-click** any linked map note to see a context menu
+- **View Scene** — Preview the destination scene
+- **Activate Scene** — Teleport all players to the scene (GM only)
+- **Preload Scene** — Preload scene textures for faster transitions (GM only)
+- **Toggle Navigation** — Show/hide the scene in the nav bar (GM only)
 
-Additionally, as a convenience feature, there is a new option on the Scene directory context menu, to create the scene notes for a scene in one click.
+### Destination Validation
+- Notes pointing to **missing scenes** show a red, disabled menu item
+- **Release detection** identifies which Beneos Battlemaps release is needed
+- Patterns detected:
+  - `DontTouch-POI-Teleporter-XX` → "Install Release XX"
+  - Escalia references → "Install Escalia expansion"
+  - DiA maps → "Install Release 96"
+- Falls back to cached target names from the audit tool
 
-## Directions
-To begin using POI Teleporter, first assign a journal entry as the "Scene Notes" for a scene. You can do this either by editing the scene and selecting the journal entry you would like from the list, or you can right-click on the scene in the directory and choose "Create Scene Notes". You can verify that this has been set correctly by right-clicking the scene in the navigation bar, it should list "Scene Notes" as an option.
+### Audit Tool
+- Access via **Module Settings → Open Audit Window**
+- Scans **all scenes** for broken POI links
+- Reports **MISSING** (journal exists but no scene link) and **INVALID** (no journal reference) notes
+- Processes in batches of 25 to handle 1000+ scenes without freezing
+- **Go to Source** — Navigate directly to the broken note
+- **Copy Info** — Copy link details to clipboard
+- Optional **target name caching** stores names in note flags for future reference
 
-Once a scene has notes set to a particular journal entry, you can create a map note from that journal on any scene. This map not is like any other, except that you can now right-click on the note to reveal a context menu with options to show the scene, activate it, or toggle it in the navigation bar.
+### Internationalization
+- English, Spanish, and French translations included
 
-If you do not see a context menu when you right click on a map note with this module enabled, double check that the map note is the same journal entry as the scene notes for the scene you want to connect to. It must be the same jorunal entry, not a copy, and the journal entry must be set as the scene notes.
+## Compatibility
+- Foundry VTT v11, v12, v13+
+- Dual HUD implementation:
+  - v13+: ApplicationV2 with HandlebarsApplicationMixin
+  - v12: Legacy BasePlaceableHUD
 
-#### *Commissioned by Bryson (Acheron)*
+## Installation
+1. In Foundry VTT, go to **Add-on Modules → Install Module**
+2. Paste the manifest URL or upload the zip file
+3. Enable the module in your world
+
+## Authors
+- **zeel** — Original development
+- **Beneos** — Design and concept

@@ -1,0 +1,80 @@
+<div class="poitp-audit">
+  <header class="poitp-audit__header">
+    <div class="poitp-audit__title">
+      <i class="fas fa-search"></i>
+      <span>{{localize "poitp.audit.title"}}</span>
+    </div>
+
+    <div class="poitp-audit__actions">
+      <button type="button" data-action="run" {{#if scanning}}disabled{{/if}}>
+        {{#if scanning}}
+          <i class="fas fa-spinner fa-spin"></i>
+          {{localize "poitp.audit.scanning"}}
+        {{else}}
+          <i class="fas fa-play"></i>
+          {{localize "poitp.audit.run"}}
+        {{/if}}
+      </button>
+    </div>
+  </header>
+
+  <div class="poitp-audit__progress">
+    {{localize "poitp.audit.progress"}}: {{progress.done}} / {{progress.total}}
+  </div>
+
+  <div class="poitp-audit__table-wrap">
+    <table class="poitp-audit__table">
+      <thead>
+        <tr>
+          <th>{{localize "poitp.audit.sourceScene"}}</th>
+          <th>{{localize "poitp.audit.note"}}</th>
+          <th>{{localize "poitp.audit.target"}}</th>
+          <th>{{localize "poitp.audit.status"}}</th>
+          <th>{{localize "poitp.audit.release"}}</th>
+          <th>{{localize "poitp.audit.message"}}</th>
+          <th>{{localize "poitp.audit.actions"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#if records.length}}
+          {{#each records as |r idx|}}
+            <tr class="poitp-audit__row poitp-audit__row--{{r.resolvedStatus}}">
+              <td>
+                <div class="mono" title="{{r.sourceSceneId}}">{{r.sourceSceneName}}</div>
+              </td>
+              <td>
+                <div class="mono">{{r.noteId}}</div>
+                <div class="muted">x={{r.x}} y={{r.y}}</div>
+              </td>
+              <td>
+                <div class="mono">{{#if r.displayTargetName}}{{r.displayTargetName}}{{else}}{{r.intendedTargetId}}{{/if}}</div>
+                <div class="muted">{{r.intendedTargetType}}: {{r.intendedTargetId}}</div>
+              </td>
+              <td>
+                <span class="badge badge--{{r.resolvedStatus}}">{{r.resolvedStatus}}</span>
+              </td>
+              <td>
+                {{#if r.releaseHint}}
+                  <span class="badge badge--release">{{r.releaseHint}}</span>
+                {{else}}
+                  —
+                {{/if}}
+              </td>
+              <td class="message">{{r.message}}</td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" data-action="goto" data-index="{{idx}}">{{localize "poitp.audit.goto"}}</button>
+                  <button type="button" data-action="copy" data-index="{{idx}}">{{localize "poitp.audit.copy"}}</button>
+                </div>
+              </td>
+            </tr>
+          {{/each}}
+        {{else}}
+          <tr>
+            <td colspan="7" class="muted">{{localize "poitp.audit.empty"}}</td>
+          </tr>
+        {{/if}}
+      </tbody>
+    </table>
+  </div>
+</div>

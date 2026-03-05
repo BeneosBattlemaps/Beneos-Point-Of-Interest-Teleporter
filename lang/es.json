@@ -1,11 +1,35 @@
 {
 	"I18N.LANGUAGE": "Español",
 	"I18N.MAINTAINERS": "sparkcity, @Viriato139ac#0342",
-	
+
 	"poitp.name": "Teleportador a punto de interés",
 	"poitp.createNote": "Crear notas de escena",
 	"poitp.activate": "Activar escena",
 	"poitp.view": "Ver escena",
+	"poitp.preLoadScene": "Precargar escena",
 	"poitp.toggleNav": "Alternar navegación",
-	"poitp.preLoadScene": "Precargar escena"
+	"poitp.destinationMissing": "Destino ausente",
+	"poitp.destinationNotInWorld": "El destino no está en tu mundo",
+	"poitp.destinationInstallRelease": "El destino no está en tu mundo. Instala Beneos Battlemaps Release {release}.",
+	"poitp.destinationInstallEscalia": "El destino no está en tu mundo. Instala Beneos Custom World Map: Escalia.",
+	"poitp.audit.title": "Auditoría de POI Teleporter",
+	"poitp.audit.run": "Ejecutar auditoría de POI",
+	"poitp.audit.hint": "Escanea todas las escenas en busca de enlaces de puntos de interés rotos.",
+	"poitp.audit.open": "Abrir ventana de auditoría",
+	"poitp.audit.scanning": "Escaneando...",
+	"poitp.audit.progress": "Progreso",
+	"poitp.audit.sourceScene": "Escena de origen",
+	"poitp.audit.note": "Nota de POI",
+	"poitp.audit.target": "Objetivo previsto",
+	"poitp.audit.status": "Estado",
+	"poitp.audit.release": "Release",
+	"poitp.audit.message": "Mensaje / Acción requerida",
+	"poitp.audit.actions": "Acciones",
+	"poitp.audit.goto": "Ir al origen",
+	"poitp.audit.copy": "Copiar info",
+	"poitp.audit.empty": "No se encontraron POI rotos.",
+	"poitp.audit.copied": "Información copiada al portapapeles",
+	"poitp.audit.invalidTarget": "El POI no tiene una referencia de objetivo válida",
+	"poitp.audit.cacheTargetName": "Cachear nombres de objetivos",
+	"poitp.audit.cacheTargetNameHint": "Si está activado, la herramienta de auditoría guarda el nombre del objetivo en los flags de la nota."
 }
