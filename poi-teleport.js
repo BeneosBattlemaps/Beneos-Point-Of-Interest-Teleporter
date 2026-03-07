@@ -32,11 +32,9 @@ class PointOfInterestTeleporter {
 
 		canvas.mouseInteractionManager.target.on("rightdown", () => {
 			canvas.hud?.poiTp?.close?.();
-			canvas.hud?.poiTp?.clear?.();
 		});
 		canvas.mouseInteractionManager.target.on("mousedown", () => {
 			canvas.hud?.poiTp?.close?.();
-			canvas.hud?.poiTp?.clear?.();
 		});
 
 		console.log(game.i18n.localize("poitp.name"), "| Ready.");
@@ -286,7 +284,7 @@ class PointOfInterestTeleporter {
 		if (timeSinceLast < 300) {
 			this._lastRightClickTime = 0; // Reset: Triple-Klick verhindern
 			canvas.hud?.poiTp?.close?.();
-			canvas.hud?.poiTp?.clear?.();
+
 			this.note.document.sheet?.render({ force: true });
 			return;
 		}
@@ -520,7 +518,6 @@ class PointOfInterestTeleporter {
 		if (!this.note?.document?.sheet) return;
 		this.note.document.sheet.render({ force: true });
 		canvas.hud?.poiTp?.close?.();
-		canvas.hud?.poiTp?.clear?.();
 	}
 }
 

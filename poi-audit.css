@@ -13,15 +13,15 @@
 .poitp-audit__table th, .poitp-audit__table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; }
 .poitp-audit__table th { position: sticky; top: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); text-align: left; }
 
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
-.muted { font-size: 11px; opacity: 0.75; }
+.poitp-audit .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+.poitp-audit .muted { font-size: 11px; opacity: 0.75; }
 
-.badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; }
-.badge--MISSING { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
-.badge--INVALID { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
-.badge--release { background: rgba(124, 77, 255, 0.2); color: #b39ddb; }
+.poitp-audit .badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.poitp-audit .badge--MISSING { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+.poitp-audit .badge--INVALID { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+.poitp-audit .badge--release { background: rgba(124, 77, 255, 0.2); color: #b39ddb; }
 
-.row-actions { display: flex; gap: 6px; }
-.row-actions button { font-size: 11px; padding: 2px 6px; }
+.poitp-audit .row-actions { display: flex; gap: 6px; }
+.poitp-audit .row-actions button { font-size: 11px; padding: 2px 6px; }
 
-.message { max-width: 360px; }
+.poitp-audit .message { max-width: 360px; }

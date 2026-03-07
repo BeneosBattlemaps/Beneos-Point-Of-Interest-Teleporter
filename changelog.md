@@ -1,5 +1,8 @@
 # Changelog
 
+## v13.0.2 ## 2026-03-07 - Hotfix
+- Fixed: Redundant badge inputs have been removed, which caused levels and CR displays to be shown incorrectly.
+
 ## v13.0.1 ## 2026-03-05
 - New: Destination validation (missing scenes show error menu)
 - New: Custom error messages with i18n (EN, ES, FR)
