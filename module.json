@@ -7,13 +7,10 @@
 	"download": "https://github.com/BeneosBattlemaps/Beneos-Point-Of-Interest-Teleporter/archive/refs/tags/v14.1.1.zip",
 	"authors": [
 		{
-			"name": "zeel",
-			"email": "zeel02@gmail.com",
-			"url": "https://github.com/zeel01",
-			"discord": "zeel#4200"
-		},
-		{
-			"name": "Beneos"
+			"name": "Beneos",
+			"email": "ben@beneos.net",
+			"url": "https://github.com/BeneosBattlemaps/",
+			"discord": "beneos_battlemaps#0159"
 		}
 	],
 	"version": "14.1.1",
