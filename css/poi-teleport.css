@@ -1,0 +1,111 @@
+/* Point of Interest Teleport — Beneos themed context menu */
+
+#poi-tp-ctx-menu {
+	color: #e6e5e3;
+	background: #151412;
+	border: 3px solid #f5c992;
+	border-radius: 10px;
+	box-shadow: 0 0 18px rgba(245, 201, 146, 0.3);
+	font-family: 'Roboto Condensed', sans-serif;
+	font-size: 45px;
+	line-height: 1.15;
+	position: fixed;
+	transform-origin: top left;
+	z-index: 10;
+	min-width: 420px;
+}
+
+#poi-tp-ctx-menu .poi-menu-list {
+	list-style: none;
+	padding: 8px;
+	margin: 0;
+}
+
+#poi-tp-ctx-menu .poi-menu-option {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 6px 14px;
+	white-space: nowrap;
+	cursor: pointer;
+	color: #f5c992;
+	text-align: left;
+	border-radius: 6px;
+	pointer-events: all;
+}
+
+#poi-tp-ctx-menu .poi-option-icon {
+	width: 1.1em;
+	flex: 0 0 auto;
+	text-align: center;
+	color: #f5c992;
+}
+
+#poi-tp-ctx-menu .poi-option-title {
+	flex: 1 1 auto;
+}
+
+#poi-tp-ctx-menu .poi-menu-option:hover {
+	background: rgba(245, 201, 146, 0.12);
+	box-shadow: 0 0 8px rgba(245, 201, 146, 0.4);
+}
+
+/* Disabled items (missing destination) */
+#poi-tp-ctx-menu .poi-menu-option.disabled {
+	cursor: not-allowed;
+	opacity: 0.75;
+}
+
+#poi-tp-ctx-menu .poi-menu-option.disabled:hover {
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Error items — soft red that still reads on dark/gold theme */
+#poi-tp-ctx-menu .poi-menu-option.error,
+#poi-tp-ctx-menu .poi-menu-option.error .poi-option-icon {
+	color: #ff9a8a;
+}
+
+#poi-tp-ctx-menu .poi-menu-option.error:hover {
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Info items (content-type hints — Navigation/Handout/Lore/Documentation) */
+#poi-tp-ctx-menu .poi-menu-option.info,
+#poi-tp-ctx-menu .poi-menu-option.info .poi-option-icon {
+	color: #e6e5e3;
+}
+
+#poi-tp-ctx-menu .poi-menu-option.info:hover {
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Note-config fieldset (Beneos binding editor).
+ * Rendered inside Foundry's native Note config sheet which uses a light
+ * background — use dark text and a subtle dark border so it reads cleanly
+ * in that context (the gold theme is reserved for the canvas HUD). */
+.poitp-beneos-fieldset {
+	border: 1px solid #111;
+	border-radius: 4px;
+	padding: 6px 10px 4px 10px;
+	margin-top: 8px;
+	color: #000;
+}
+
+.poitp-beneos-fieldset legend {
+	color: #000;
+	font-weight: bold;
+	padding: 0 6px;
+}
+
+.poitp-beneos-fieldset label,
+.poitp-beneos-fieldset .notes {
+	color: #000;
+}
+
+.poitp-beneos-fieldset .form-fields {
+	gap: 4px;
+}

@@ -1,0 +1,45 @@
+<div class="poitp-backfill">
+  {{#unless setupMode}}
+    <p class="notes poitp-backfill__warn">
+      <i class="fas fa-lock"></i>
+      {{localize "poitp.backfill.needSetupMode"}}
+    </p>
+  {{/unless}}
+
+  <p class="notes">{{localize "poitp.backfill.description"}}</p>
+
+  <div class="poitp-backfill__actions">
+    <button type="button" data-action="runBackfill" {{#if running}}disabled{{/if}} {{#unless setupMode}}disabled{{/unless}}>
+      {{#if running}}
+        <i class="fas fa-spinner fa-spin"></i> {{localize "poitp.backfill.running"}}
+      {{else}}
+        <i class="fas fa-tags"></i> {{localize "poitp.backfill.run"}}
+      {{/if}}
+    </button>
+  </div>
+
+  {{#if progress}}
+    <div class="poitp-backfill__progress">
+      <div>{{localize "poitp.backfill.scenes"}}: {{progress.scene}} / {{progress.scenesTotal}}</div>
+      <div>{{localize "poitp.backfill.notesScanned"}}: {{progress.notesScanned}}</div>
+      <div>{{localize "poitp.backfill.updated"}}: {{progress.updated}}</div>
+      {{#if progress.skippedUserOverride}}
+        <div class="muted">{{localize "poitp.backfill.skippedUserOverride"}}: {{progress.skippedUserOverride}}</div>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  {{#if summary}}
+    <div class="poitp-backfill__summary">
+      <strong>{{localize "poitp.backfill.done"}}</strong>
+      <ul>
+        <li>{{localize "poitp.backfill.scenesProcessed"}}: {{summary.scenesProcessed}}</li>
+        <li>{{localize "poitp.backfill.notesScanned"}}: {{summary.notesScanned}}</li>
+        <li>{{localize "poitp.backfill.updated"}}: {{summary.updated}}</li>
+        {{#if summary.skippedUserOverride}}
+          <li>{{localize "poitp.backfill.skippedUserOverride"}}: {{summary.skippedUserOverride}}</li>
+        {{/if}}
+      </ul>
+    </div>
+  {{/if}}
+</div>

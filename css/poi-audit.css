@@ -25,3 +25,12 @@
 .poitp-audit .row-actions button { font-size: 11px; padding: 2px 6px; }
 
 .poitp-audit .message { max-width: 360px; }
+
+/* Backfill window */
+.poitp-backfill { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.poitp-backfill__warn { color: #c62828; font-weight: 600; }
+.poitp-backfill__actions { display: flex; justify-content: flex-end; }
+.poitp-backfill__progress { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; padding: 6px 8px; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; }
+.poitp-backfill__progress .muted { opacity: 0.7; }
+.poitp-backfill__summary { padding: 8px 10px; border: 1px solid #2e7d32; background: rgba(46, 125, 50, 0.08); border-radius: 4px; }
+.poitp-backfill__summary ul { margin: 4px 0 0 0; padding-left: 18px; }
