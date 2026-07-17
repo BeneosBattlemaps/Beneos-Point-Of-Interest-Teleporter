@@ -19,71 +19,6 @@ class PointOfInterestTeleporter {
 	static MODULE_ID = "poi-teleport";
 
 	/**
-	 * Note IDs for which we just wrote flags ourselves.
-	 * Used to short-circuit the updateNote hook and prevent sync loops.
-	 * Cleared async via setTimeout(..., 0).
-	 */
-	static _recentSyncWrites = new Set();
-
-	/**
-	 * Is Beneos setup mode enabled? Guarded read (returns false before `init`).
-	 */
-	static _isSetupMode() {
-		try {
-			return game.settings?.get?.(this.MODULE_ID, "setupMode") === true;
-		} catch (e) {
-			return false;
-		}
-	}
-
-	/**
-	 * Write/refresh Beneos binding flags on a note document.
-	 * Safe no-op for non-GM clients, non-active-GMs, notes with userOverride,
-	 * or when nothing would actually change.
-	 *
-	 * @static
-	 * @param {NoteDocument} noteDoc
-	 */
-	static async _syncBeneosFlags(noteDoc) {
-		if (!noteDoc) return;
-		if (!game.user?.isGM) return;
-
-		const activeGMId = game.users?.activeGM?.id;
-		if (activeGMId && activeGMId !== game.user.id) return;
-
-		if (!this._isSetupMode()) return;
-
-		if (this._recentSyncWrites.has(noteDoc.id)) return;
-
-		const existing = noteDoc.flags?.[this.MODULE_ID] ?? {};
-		if (existing.userOverride === true) return;
-
-		// Resolve current target name. PoiTpAudit lives in poi-audit.js (same load group).
-		const ref = PoiTpAudit.getNoteTargetRef(noteDoc);
-		const resolved = PoiTpAudit.resolveTarget(ref);
-		if (resolved.status !== "OK") return;
-
-		const next = PoiTpAudit.computeBeneosFlags(resolved.name);
-		if (PoiTpAudit.beneosFlagsEqual(existing, next)) return;
-
-		this._recentSyncWrites.add(noteDoc.id);
-		setTimeout(() => this._recentSyncWrites.delete(noteDoc.id), 0);
-
-		try {
-			await noteDoc.update({
-				flags: {
-					[this.MODULE_ID]: {
-						...existing,
-						...next
-					}
-				}
-			});
-		} catch (e) {
-			console.warn("POI Teleport | _syncBeneosFlags failed", e);
-		}
-	}
-
-	/**
 	 * Handles on the canvasReady Hook.
 	 *
 	 * Checks all notes, and adds event listeners for
@@ -93,13 +28,6 @@ class PointOfInterestTeleporter {
 	 * @memberof PointOfInterestTeleporter
 	 */
 	static async onReady() {
-		// Optional setup-mode sweep: backfill Beneos binding flags on existing notes.
-		if (this._isSetupMode() && game.user?.isGM) {
-			for (const n of canvas.notes.placeables) {
-				await this._syncBeneosFlags(n.document);
-			}
-		}
-
 		canvas.notes.placeables.forEach(n => this.checkNote(n));
 
 		canvas.mouseInteractionManager.target.on("rightdown", () => {
@@ -137,7 +65,6 @@ class PointOfInterestTeleporter {
 	 * @memberof PointOfInterestTeleporter
 	 */
 	static async createNote(noteDocument) {
-		await this._syncBeneosFlags(noteDocument);
 		if (noteDocument.object) return this.checkNote(noteDocument.object);
 	}
 
@@ -149,12 +76,6 @@ class PointOfInterestTeleporter {
 	 * @memberof PointOfInterestTeleporter
 	 */
 	static async updateNote(noteDocument) {
-		// Short-circuit the loop triggered by our own sync writes.
-		if (this._recentSyncWrites.has(noteDocument.id)) {
-			if (noteDocument.object) return this.checkNote(noteDocument.object);
-			return;
-		}
-		await this._syncBeneosFlags(noteDocument);
 		if (noteDocument.object) return this.checkNote(noteDocument.object);
 	}
 
@@ -263,8 +184,11 @@ class PointOfInterestTeleporter {
 		// (journal was deleted, or never resolved) are treated as non-POI content
 		// and left to Foundry's default behaviour.
 		if (!journal) {
-			const existingFlags = noteDoc.flags?.[PointOfInterestTeleporter.MODULE_ID];
-			if (existingFlags?.isBeneos !== true) return;
+			// Journal genuinely missing (rare now that destination journals ship
+			// in every pack). Fall back to the note label to decide Beneos-ness;
+			// non-Beneos orphan notes bail out and keep Foundry's default behaviour.
+			const binding = PointOfInterestTeleporter.parseBinding(noteDoc.text);
+			if (!binding.isBeneos) return;
 
 			if (!await this.waitFor(note, "mouseInteractionManager", 60)) return;
 			const missingNoteText = noteDoc.text?.toLowerCase() ?? "";
@@ -306,15 +230,27 @@ class PointOfInterestTeleporter {
 		// Regular POI → look up the target scene
 		let scene = null;
 
+		// Collect every matching scene. A release that was later installed can
+		// leave its repack placeholder behind alongside the real scene, so we
+		// prefer a real (non-placeholder) match over a placeholder one.
+		let matches = [];
 		if (hasPageId) {
 			// Scene.journalEntryPage is always the raw pageId string
-			scene = game.scenes.find(s => s.journalEntryPage === notePageId);
+			matches = game.scenes.filter(s => s.journalEntryPage === notePageId);
 		} else if (hasEntryId) {
 			// Scene.journal is a resolved JournalEntry document (compare via .id)
-			scene = game.scenes.find(s => {
-				if (s.journalEntryPage) return false;
-				return s.journal?.id === noteEntryId;
-			});
+			matches = game.scenes.filter(s => !s.journalEntryPage && s.journal?.id === noteEntryId);
+		}
+		scene = matches.find(s => !this.sceneIsUninstalledPlaceholder(s)) ?? matches[0] ?? null;
+
+		// New-repack model: a not-installed Beneos release ships a placeholder
+		// scene (background.src null) that links to the teleporter journal, so
+		// the lookup above resolves it. Treat such a placeholder as "destination
+		// not installed" so the install hint/menu shows instead of View/Activate.
+		// Gated to Beneos notes so genuinely empty user scenes stay navigable.
+		const binding = PointOfInterestTeleporter.parseBinding(journal?.name);
+		if (scene && binding.isBeneos && this.sceneIsUninstalledPlaceholder(scene)) {
+			scene = null;
 		}
 
 		// Wait for mouse interaction manager (needed to attach right-click handler)
@@ -322,6 +258,22 @@ class PointOfInterestTeleporter {
 
 		// scene found → navigation menu; scene null → error menu (missing destination)
 		new PointOfInterestTeleporter(note, scene ?? null, null);
+	}
+
+	/**
+	 * Whether a resolved scene is an uninstalled placeholder, i.e. it has no
+	 * real background asset. Beneos repacks ship such placeholder scenes for
+	 * releases whose battlemap assets are not installed in the world.
+	 * V13 reads scene.background.src; V14 prefers scene.firstLevel.background.src.
+	 *
+	 * @param {Scene} scene
+	 * @return {boolean}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static sceneIsUninstalledPlaceholder(scene) {
+		if (!scene) return false;
+		const src = scene.firstLevel?.background?.src ?? scene.background?.src ?? null;
+		return !src || String(src).trim() === "";
 	}
 
 	/**
@@ -405,11 +357,8 @@ class PointOfInterestTeleporter {
 	 * @memberof PointOfInterestTeleporter
 	 */
 	_getTargetName() {
-		// 1. Flags cache (set by the audit tool)
-		const cached = this.note?.document?.flags?.[PointOfInterestTeleporter.MODULE_ID]?.targetName;
-		if (cached) return cached;
-
-		// 2. Journal name lookup — most reliable source; works when journal exists but scene is missing
+		// The destination journal is always packed into the release (even when
+		// its scene is absent), so the live journal name is the ground truth.
 		const entryId = this.note?.document?.entryId;
 		if (entryId) {
 			const entry = game.journal?.get(entryId);
@@ -423,58 +372,184 @@ class PointOfInterestTeleporter {
 			}
 		}
 
-		// 3. Note text/label — last resort (human-readable label, usually not a release ID)
+		// Note text/label — last resort (human-readable label, usually not a release ID)
 		return this.note?.document?.text || null;
 	}
 
 	/**
+	 * Resolve the Beneos binding purely from the target journal name. The note
+	 * flags are no longer consulted: every destination journal is now shipped
+	 * inside the release pack, so its name is the single source of truth.
+	 *
+	 * @param {string|null} name  the resolved journal/target name
+	 * @return {{isBeneos:boolean, hintKind:string, releaseHint:?number, mapHint:?number, typeHint:?string, name:?string}}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static parseBinding(name) {
+		let parsed = null;
+		try {
+			if (typeof PoiTpAudit !== "undefined") parsed = PoiTpAudit.parseReleaseHint(name);
+		} catch (_e) { /* parser unavailable */ }
+		return {
+			isBeneos: parsed?.isBeneos === true,
+			hintKind: parsed?.hintKind ?? "none",
+			releaseHint: parsed?.releaseHint ?? null,
+			mapHint: parsed?.mapHint ?? null,
+			typeHint: parsed?.typeHint ?? null,
+			name: name ?? null
+		};
+	}
+
+	/**
+	 * Resolve this note's Beneos binding from its live target journal name.
+	 *
+	 * @return {{isBeneos:boolean, hintKind:string, releaseHint:?number, mapHint:?number, typeHint:?string, name:?string}}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_resolveBeneosBinding() {
+		return PointOfInterestTeleporter.parseBinding(this._getTargetName());
+	}
+
+	/**
 	 * Determine the appropriate error message for a missing destination.
-	 * Flag-gated: only shows Beneos-branded messaging when the note's flags
-	 * explicitly mark it as a Beneos teleporter (isBeneos === true).
-	 * Otherwise a neutral "not configured" message is returned so user-owned
-	 * journal notes don't misfire the Beneos install hint.
+	 * Beneos-branding is decided by the binding (journal name first, then baked
+	 * flags), so a non-Beneos journal note still shows the neutral message.
 	 *
 	 * @return {string} A localized error message
 	 * @memberof PointOfInterestTeleporter
 	 */
 	getReleaseMessage() {
-		const flags = this.note?.document?.flags?.[PointOfInterestTeleporter.MODULE_ID];
+		const b = this._resolveBeneosBinding();
 
-		// Not marked as Beneos → neutral, non-Beneos message.
-		if (!flags || flags.isBeneos !== true) {
+		// Not a Beneos teleporter → neutral, non-Beneos message.
+		if (!b.isBeneos) {
 			return game.i18n.localize("poitp.destinationNotConfigured");
 		}
 
 		// Beneos with release + map + type → richest message.
-		if (flags.hintKind === "release" && flags.releaseHint != null) {
-			if (flags.mapHint != null && flags.typeHint) {
+		if (b.hintKind === "release" && b.releaseHint != null) {
+			if (b.mapHint != null && b.typeHint) {
 				return game.i18n.format("poitp.destinationInstallReleaseMapType", {
-					release: flags.releaseHint,
-					map: flags.mapHint,
-					type: flags.typeHint
+					release: b.releaseHint,
+					map: b.mapHint,
+					type: b.typeHint
 				});
 			}
-			if (flags.mapHint != null) {
+			if (b.mapHint != null) {
 				return game.i18n.format("poitp.destinationInstallReleaseMap", {
-					release: flags.releaseHint,
-					map: flags.mapHint
+					release: b.releaseHint,
+					map: b.mapHint
 				});
 			}
 			return game.i18n.format("poitp.destinationInstallRelease", {
-				release: flags.releaseHint
+				release: b.releaseHint
 			});
 		}
 
-		if (flags.hintKind === "escalia") {
+		if (b.hintKind === "escalia") {
 			return game.i18n.localize("poitp.destinationInstallEscalia");
 		}
 
-		if (flags.hintKind === "dia96") {
+		if (b.hintKind === "dia96") {
 			return game.i18n.format("poitp.destinationInstallRelease", { release: 96 });
 		}
 
-		// Flagged as Beneos but no specific hint → generic Beneos message.
+		// Beneos but no specific hint → generic Beneos message.
 		return game.i18n.localize("poitp.destinationInstallBeneosGeneric");
+	}
+
+	/**
+	 * Whether the "Install Missing Pack" action can be offered for this note.
+	 * Requires a GM, a Beneos-flagged note, and the Beneos module's public
+	 * install API. In worlds without the Beneos module nothing is offered and
+	 * only the plain release hint is shown.
+	 *
+	 * @return {boolean}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_canInstallMissingPack() {
+		if (!game.user?.isGM) return false;
+		if (!this._resolveBeneosBinding().isBeneos) return false;
+		if (!game.modules?.get?.("beneos-module")?.active) return false;
+		return typeof game.beneos?.api?.installReleaseByNumber === "function";
+	}
+
+	/**
+	 * Hands the missing release off to the Beneos module's install API. The API
+	 * resolves the release number, gates on Patreon access (opening the cloud
+	 * window with the Join state when the user has no access), and otherwise
+	 * shows a confirmation with 4K/HD choice and download size before installing.
+	 *
+	 * @memberof PointOfInterestTeleporter
+	 */
+	installMissingPack() {
+		canvas.hud?.poiTp?.close?.();
+
+		const install = game.beneos?.api?.installReleaseByNumber;
+		if (typeof install !== "function") {
+			return ui.notifications?.warn(game.i18n.localize("poitp.installApiMissing"));
+		}
+
+		const b = this._resolveBeneosBinding();
+		let releaseNum;
+		if (b.hintKind === "release" && b.releaseHint != null) releaseNum = b.releaseHint;
+		else if (b.hintKind === "dia96") releaseNum = 96;
+
+		// releaseNum may be undefined (e.g. Escalia / Landing Page / other special
+		// release with no numeric hint). We pass the journal name so the API can
+		// resolve it against the cloud catalog's display_name; failing that it
+		// opens the cloud browser so the user is never stuck.
+		//
+		// The API promise resolves only AFTER the native installer has created the
+		// scene documents, so we can re-resolve our destination immediately and
+		// flip this teleporter to "navigation" without a reload.
+		Promise.resolve(install(releaseNum, { mapHint: b.mapHint, typeHint: b.typeHint, name: b.name }))
+			.then(() => this._refreshDestinationAfterInstall())
+			.catch(err => {
+				console.warn("poi-teleport | installMissingPack failed", err);
+				ui.notifications?.error(game.i18n.localize("poitp.installApiMissing"));
+			});
+	}
+
+	/**
+	 * Resolve the destination scene this note points at, applying the same
+	 * placeholder filtering as checkNote(): prefer a real (installed) scene over
+	 * a not-installed placeholder, and treat a lone placeholder as "missing".
+	 *
+	 * @return {Scene|null}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_lookupScene() {
+		const doc = this.note?.document;
+		if (!doc) return null;
+		const pageId = (doc.pageId && doc.pageId.trim() !== "") ? doc.pageId : null;
+		const entryId = (doc.entryId && doc.entryId.trim() !== "") ? doc.entryId : null;
+
+		let matches = [];
+		if (pageId) matches = game.scenes.filter(s => s.journalEntryPage === pageId);
+		else if (entryId) matches = game.scenes.filter(s => !s.journalEntryPage && s.journal?.id === entryId);
+
+		let scene = matches.find(s => !PointOfInterestTeleporter.sceneIsUninstalledPlaceholder(s)) ?? matches[0] ?? null;
+		if (scene && this._resolveBeneosBinding().isBeneos && PointOfInterestTeleporter.sceneIsUninstalledPlaceholder(scene)) {
+			scene = null;
+		}
+		return scene;
+	}
+
+	/**
+	 * After a triggered install completes, re-resolve the destination. If the
+	 * release's real scene now exists, flip this teleporter from "missing" to
+	 * "navigation" so the next right-click travels there directly (no reload).
+	 * A no-op when nothing was installed (cancelled / no access / failed).
+	 *
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_refreshDestinationAfterInstall() {
+		const scene = this._lookupScene();
+		if (!scene) return;
+		this.scene = scene;
+		this.contentType = null;
+		ui.notifications?.info(game.i18n.format("poitp.installReadyNotice", { name: scene.name }));
 	}
 
 	/**
@@ -515,13 +590,27 @@ class PointOfInterestTeleporter {
 		// Config access is intentionally not offered here — GMs reach the note
 		// configuration via double-right-click on the icon.
 		if (!this.scene) {
-			return [{
+			const items = [{
 				icon: '<i class="fas fa-exclamation-triangle fa-fw"></i>',
 				title: this.getReleaseMessage(),
 				rawTitle: true,
 				disabled: true,
 				error: true
 			}];
+
+			// When the Beneos module is installed, offer a one-click install of
+			// the missing release straight from here. Gated to GMs and Beneos
+			// notes; the heavy lifting (access check, confirmation with 4K/HD +
+			// download size, the installer itself) lives behind the Beneos API.
+			if (this._canInstallMissingPack()) {
+				items.push({
+					icon: '<i class="fas fa-cloud-download-alt fa-fw"></i>',
+					title: "poitp.installMissingPack",
+					trigger: "installMissingPack"
+				});
+			}
+
+			return items;
 		}
 
 		const options = [
@@ -675,8 +764,14 @@ class PoiTpHUD extends HandlebarsApplicationMixin(foundry.applications.hud.BaseP
 	setPosition() {
 		const el = this.element;
 		if (!el) return;
-		el.style.left = this.object.x + "px";
-		el.style.top = this.object.y + "px";
+		const obj = this.object;
+		// Foundry calls setPosition on every window resize for all registered HUD
+		// apps, even after the bound note has been torn down (scene change / canvas
+		// teardown). A destroyed PIXI placeable has a null transform, so reading
+		// .x/.y throws "Cannot read properties of null (reading 'position')". Bail.
+		if (!obj || obj.destroyed || !obj.transform) return;
+		el.style.left = obj.x + "px";
+		el.style.top = obj.y + "px";
 	}
 }
 
@@ -692,200 +787,3 @@ Hooks.on("renderHeadsUpDisplayContainer", (...args) => PointOfInterestTeleporter
 Hooks.on("canvasReady", () => PointOfInterestTeleporter.onReady());
 Hooks.on("createNote", (...args) => PointOfInterestTeleporter.createNote(...args));
 Hooks.on("updateNote", (...args) => PointOfInterestTeleporter.updateNote(...args));
-
-
-/* ────────────────────────────────────────────────────────────────────
- *  Note Config — Beneos binding fieldset
- * ──────────────────────────────────────────────────────────────────── */
-
-/**
- * Inject a "Beneos Teleporter" fieldset into the native Note configuration sheet.
- * Fields bind directly to note.flags["poi-teleport"].* via Foundry's dot-path form
- * serialization. A small "Detect" button pulls the current journal's name and
- * re-parses release/map/type client-side.
- *
- * Compatible with Foundry V13 (jQuery FormApplication) and V14 (ApplicationV2 /
- * plain HTMLElement). Fails loud on the console so issues are diagnosable.
- */
-function _poitpInjectBeneosFieldset(app, html) {
-	// The Beneos binding fieldset is strictly an internal Beneos content-preparation
-	// tool. End-users never need to see it — the error-message logic that reads
-	// flags (getReleaseMessage) stays active regardless of this gate.
-	if (!PointOfInterestTeleporter._isSetupMode()) return;
-
-	// --- Resolve the real HTMLElement root (V1 jQuery or V2 HTMLElement) ---
-	let root = null;
-	if (html instanceof HTMLElement) {
-		root = html;
-	} else if (html && typeof html.get === "function") {
-		root = html.get(0) ?? null;                 // jQuery
-	} else if (html && typeof html[0] !== "undefined") {
-		root = html[0] ?? null;
-	} else if (app?.element instanceof HTMLElement) {
-		root = app.element;                          // ApplicationV2 fallback
-	} else if (app?.element?.[0] instanceof HTMLElement) {
-		root = app.element[0];                       // jQuery-wrapped app.element
-	}
-
-	if (!root || typeof root.querySelector !== "function") {
-		console.warn("POI Teleport | renderNoteConfig: could not resolve root element", { html, app });
-		return;
-	}
-
-	// --- Locate the form (root itself, or a descendant) ---
-	const form = root.matches?.("form")
-		? root
-		: (root.querySelector?.("form") ?? root);
-
-	if (!form) {
-		console.warn("POI Teleport | renderNoteConfig: no form element found");
-		return;
-	}
-
-	// Avoid double-injection on re-render.
-	if (form.querySelector('[data-beneos-fieldset="poi-teleport"]')) return;
-
-	const MID = PointOfInterestTeleporter.MODULE_ID;
-	const flags = app?.document?.flags?.[MID] ?? {};
-
-	const isGM = !!game.user?.isGM;
-	const lockedAttr = isGM ? "" : " disabled";
-
-	const t = (key) => game.i18n.localize(key);
-	const esc = (s) => {
-		if (s == null) return "";
-		return String(s)
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;");
-	};
-
-	const fieldset = document.createElement("fieldset");
-	fieldset.dataset.beneosFieldset = "poi-teleport";
-	fieldset.classList.add("poitp-beneos-fieldset");
-	fieldset.innerHTML = `
-		<legend>${t("poitp.config.section")}</legend>
-		<div class="form-group">
-			<label>${t("poitp.config.isBeneos")}</label>
-			<div class="form-fields">
-				<input type="checkbox" name="flags.${MID}.isBeneos" ${flags.isBeneos === true ? "checked" : ""}${lockedAttr}>
-			</div>
-			<p class="notes">${t("poitp.config.isBeneosHint")}</p>
-		</div>
-		<div class="form-group">
-			<label>${t("poitp.config.targetName")}</label>
-			<div class="form-fields">
-				<input type="text" name="flags.${MID}.targetName" value="${esc(flags.targetName)}"${lockedAttr}>
-			</div>
-		</div>
-		<div class="form-group">
-			<label>${t("poitp.config.release")} / ${t("poitp.config.mapNum")} / ${t("poitp.config.typeCode")}</label>
-			<div class="form-fields">
-				<input type="number" name="flags.${MID}.releaseHint" value="${esc(flags.releaseHint)}" placeholder="06" style="flex: 0 0 80px;"${lockedAttr}>
-				<input type="number" name="flags.${MID}.mapHint" value="${esc(flags.mapHint)}" placeholder="02" style="flex: 0 0 80px;"${lockedAttr}>
-				<input type="text" name="flags.${MID}.typeHint" value="${esc(flags.typeHint)}" placeholder="SC" style="flex: 0 0 100px;"${lockedAttr}>
-			</div>
-		</div>
-		<input type="hidden" name="flags.${MID}.hintKind" value="${esc(flags.hintKind ?? "none")}">
-		<input type="hidden" name="flags.${MID}.userOverride" value="${flags.userOverride === true ? "true" : "false"}" data-dtype="Boolean">
-		<div class="form-group">
-			<label></label>
-			<div class="form-fields">
-				<button type="button" data-action="poitp-detect-beneos"${lockedAttr}>
-					<i class="fas fa-wand-magic-sparkles"></i>
-					${t("poitp.config.autoDetect")}
-				</button>
-			</div>
-		</div>
-	`;
-
-	// --- Insertion strategy: try form footer, fall back to form end, then root end ---
-	const footer = form.querySelector(
-		"footer.form-footer, footer.sheet-footer, .form-footer, .sheet-footer, button[type='submit']"
-	);
-	let inserted = false;
-	if (footer) {
-		const anchor = footer.closest?.("footer, .form-footer, .sheet-footer") ?? footer;
-		if (anchor.parentElement === form) {
-			form.insertBefore(fieldset, anchor);
-			inserted = true;
-		} else if (anchor.parentElement) {
-			anchor.parentElement.insertBefore(fieldset, anchor);
-			inserted = true;
-		}
-	}
-	if (!inserted) {
-		form.appendChild(fieldset);
-	}
-
-	// --- Detect-from-journal button handler ---
-	const btn = fieldset.querySelector('[data-action="poitp-detect-beneos"]');
-	if (btn && isGM) {
-		btn.addEventListener("click", (ev) => {
-			ev.preventDefault();
-
-			const entrySel = form.querySelector(
-				'[name="entryId"], select[name="entryId"], input[name="entryId"]'
-			);
-			const entryId = entrySel?.value?.trim() || app?.document?.entryId || null;
-			if (!entryId) {
-				ui.notifications?.warn(game.i18n.localize("poitp.destinationNotConfigured"));
-				return;
-			}
-
-			const entry = game.journal?.get(entryId);
-			const name = entry?.name;
-			if (!name) {
-				ui.notifications?.warn(game.i18n.localize("poitp.destinationNotConfigured"));
-				return;
-			}
-
-			const computed = (typeof PoiTpAudit !== "undefined")
-				? PoiTpAudit.computeBeneosFlags(name)
-				: null;
-			if (!computed) return;
-
-			const set = (selector, value) => {
-				const el = form.querySelector(selector);
-				if (!el) return;
-				if (el.type === "checkbox") el.checked = !!value;
-				else el.value = value == null ? "" : String(value);
-			};
-
-			set(`[name="flags.${MID}.isBeneos"]`, computed.isBeneos);
-			set(`[name="flags.${MID}.targetName"]`, computed.targetName);
-			set(`[name="flags.${MID}.releaseHint"]`, computed.releaseHint);
-			set(`[name="flags.${MID}.mapHint"]`, computed.mapHint);
-			set(`[name="flags.${MID}.typeHint"]`, computed.typeHint);
-			set(`[name="flags.${MID}.hintKind"]`, computed.hintKind);
-			set(`[name="flags.${MID}.userOverride"]`, "true");
-		});
-	}
-
-	// isBeneos toggled manually → mark userOverride so auto-sync won't revert it.
-	const isBeneosBox = fieldset.querySelector(`[name="flags.${MID}.isBeneos"]`);
-	const userOverrideInput = fieldset.querySelector(`[name="flags.${MID}.userOverride"]`);
-	if (isBeneosBox && userOverrideInput && isGM) {
-		isBeneosBox.addEventListener("change", () => {
-			userOverrideInput.value = "true";
-		});
-	}
-
-	// Auto-size the rendered sheet so the new fieldset isn't clipped.
-	if (typeof app?.setPosition === "function") {
-		queueMicrotask(() => { try { app.setPosition({ height: "auto" }); } catch (e) {} });
-	}
-}
-
-// Register against both the legacy hook and the ApplicationV2-style hook.
-// Foundry dispatches `render{ClassName}` for both; keeping the dedicated
-// `renderNoteConfig` registration is enough in practice, but we also wrap it
-// with error handling so one bad render doesn't break the whole sheet.
-Hooks.on("renderNoteConfig", (app, html, data) => {
-	try {
-		_poitpInjectBeneosFieldset(app, html);
-	} catch (e) {
-		console.warn("POI Teleport | renderNoteConfig injection failed", e);
-	}
-});

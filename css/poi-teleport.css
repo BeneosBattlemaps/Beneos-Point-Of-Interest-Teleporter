@@ -84,26 +84,26 @@
 }
 
 /* Note-config fieldset (Beneos binding editor).
- * Rendered inside Foundry's native Note config sheet which uses a light
- * background — use dark text and a subtle dark border so it reads cleanly
- * in that context (the gold theme is reserved for the canvas HUD). */
+ * Rendered inside Foundry's native Note config sheet. Uses Foundry V13 CSS
+ * variables so the fieldset adapts automatically to both Light and Dark
+ * color schemes (the gold theme is reserved for the canvas HUD). */
 .poitp-beneos-fieldset {
-	border: 1px solid #111;
+	border: 1px solid var(--color-border-light, #88888855);
 	border-radius: 4px;
 	padding: 6px 10px 4px 10px;
 	margin-top: 8px;
-	color: #000;
+	color: var(--color-text-primary, inherit);
 }
 
 .poitp-beneos-fieldset legend {
-	color: #000;
+	color: var(--color-text-primary, inherit);
 	font-weight: bold;
 	padding: 0 6px;
 }
 
 .poitp-beneos-fieldset label,
 .poitp-beneos-fieldset .notes {
-	color: #000;
+	color: var(--color-text-primary, inherit);
 }
 
 .poitp-beneos-fieldset .form-fields {

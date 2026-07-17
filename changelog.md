@@ -1,5 +1,8 @@
 # Changelog
 
+## v14.1.2 ## 2026-07-18
+- **Update:**  We have now implemented a quick-installation feature for Beneos Battlemaps content.
+
 ## v14.1.1 ## 2026-04-21 — Folder Structure Refactor
 - **Changed:** Module layout now follows Foundry best practice and matches the `beneos-module` structure. Root no longer carries loose script/CSS/template files.
   - `poi-teleport.js`, `poi-audit.js` → `scripts/`

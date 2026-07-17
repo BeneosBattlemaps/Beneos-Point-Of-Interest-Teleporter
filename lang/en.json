@@ -16,6 +16,9 @@
 	"poitp.destinationInstallReleaseMap": "Destination not in your World. Install Beneos Battlemaps Release {release} (Map {map}).",
 	"poitp.destinationInstallReleaseMapType": "Destination not in your World. Install Beneos Battlemaps Release {release} (Map {map}, {type}).",
 	"poitp.destinationInstallEscalia": "Destination not in your World. Install Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Install Missing Pack",
+	"poitp.installApiMissing": "The Beneos module is required to install this pack.",
+	"poitp.installReadyNotice": "Release installed. '{name}' is now available; right-click the icon again to travel there.",
 
 	"poitp.contentType.navigation":    "Left click to teleport characters",
 	"poitp.contentType.handout":       "Double-left-click to open",

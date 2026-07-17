@@ -22,33 +22,6 @@ class PoiTpAudit {
 				type: PoiTpAuditMenu,
 				restricted: true
 			});
-
-			game.settings.register(this.MODULE_ID, "auditCacheTargetName", {
-				name: "poitp.audit.cacheTargetName",
-				hint: "poitp.audit.cacheTargetNameHint",
-				scope: "world",
-				config: true,
-				type: Boolean,
-				default: false
-			});
-
-			game.settings.register(this.MODULE_ID, "setupMode", {
-				name: "poitp.setupMode.name",
-				hint: "poitp.setupMode.hint",
-				scope: "world",
-				config: true,
-				type: Boolean,
-				default: false
-			});
-
-			game.settings.registerMenu(this.MODULE_ID, "backfillMenu", {
-				name: "poitp.backfill.menuName",
-				hint: "poitp.backfill.menuHint",
-				label: "poitp.backfill.menuLabel",
-				icon: "fas fa-tags",
-				type: PoiTpBackfillApp,
-				restricted: true
-			});
 		} catch (e) {
 			console.warn("POI Teleport | Failed to register audit settings", e);
 		}
@@ -136,8 +109,9 @@ class PoiTpAudit {
 			return { hintKind: "none", isBeneos: false };
 		}
 
-		// Escalia expansion (`DontTouch-POI-Teleporter-Escalia-Mia...`)
-		if (nameCandidate.startsWith("DontTouch-POI-Teleporter-Escalia-Mia")) {
+		// Escalia expansion (bare `DontTouch-POI-Teleporter-Escalia` or the
+		// `-Escalia-Mia...` variants). The bare name has no release number.
+		if (nameCandidate.startsWith("DontTouch-POI-Teleporter-Escalia")) {
 			return { hintKind: "escalia", isBeneos: true };
 		}
 
@@ -156,6 +130,14 @@ class PoiTpAudit {
 			}
 		}
 
+		// Any other Beneos teleporter journal (no resolvable release number).
+		// Still a Beneos teleporter, so it must surface the install hint/menu.
+		// Content-type journals (handout/navigation/lore/documentation) do NOT
+		// carry this prefix and stay non-Beneos.
+		if (nameCandidate.startsWith("DontTouch-POI-Teleporter")) {
+			return { hintKind: "none", isBeneos: true };
+		}
+
 		return { hintKind: "none", isBeneos: false };
 	}
 
@@ -167,82 +149,25 @@ class PoiTpAudit {
 	}
 
 	/**
-	 * Compute the Beneos binding flag object for a given target name.
-	 * Returns a fully-populated flag object with nulls for missing fields, so
-	 * callers can do a strict equality check against existing flags.
-	 */
-	static computeBeneosFlags(targetName) {
-		const hint = this.parseReleaseHint(targetName);
-		return {
-			isBeneos: hint.isBeneos === true,
-			targetName: targetName ?? null,
-			releaseHint: hint.releaseHint ?? null,
-			mapHint: hint.mapHint ?? null,
-			typeHint: hint.typeHint ?? null,
-			hintKind: hint.hintKind ?? "none"
-		};
-	}
-
-	/**
-	 * True if the two Beneos-flag objects carry the same binding info.
-	 * Ignores userOverride (tracked separately).
-	 */
-	static beneosFlagsEqual(a, b) {
-		if (!a || !b) return false;
-		return a.isBeneos === b.isBeneos
-			&& a.targetName === b.targetName
-			&& a.releaseHint === b.releaseHint
-			&& a.mapHint === b.mapHint
-			&& a.typeHint === b.typeHint
-			&& a.hintKind === b.hintKind;
-	}
-
-	/**
 	 * Scan a single scene for broken POI links.
 	 */
 	static async scanScene(scene) {
 		const out = [];
 		const notes = scene?.notes?.contents ?? [];
-		const shouldCache = game.settings?.get?.(this.MODULE_ID, "auditCacheTargetName");
 
 		for (const note of notes) {
 			const ref = this.getNoteTargetRef(note);
-			const cached = note?.flags?.[this.MODULE_ID]?.targetName;
 			const noteText = note?.text;
 
 			const resolved = this.resolveTarget(ref);
 			const resolvedStatus = resolved.status === "OK" ? "OK" : (ref.type === "none" ? "INVALID" : resolved.status);
 
 			// Skip OK notes (audit focuses on problems)
-			if (resolvedStatus === "OK") {
-				// Optional: cache target name for future missing scenarios
-				if (shouldCache) {
-					try {
-						const existing = note.flags?.[this.MODULE_ID] ?? {};
-						if (existing.userOverride === true) {
-							continue;
-						}
-						const next = this.computeBeneosFlags(resolved.name);
-						if (!this.beneosFlagsEqual(existing, next)) {
-							await note.update({
-								flags: {
-									[this.MODULE_ID]: {
-										...existing,
-										...next
-									}
-								}
-							});
-						}
-					} catch (e) {
-						// Non-fatal
-					}
-				}
-				continue;
-			}
+			if (resolvedStatus === "OK") continue;
 
 			const bestNameCandidate = this.getBestEffortName({
 				resolvedName: resolved.name,
-				cachedTargetName: cached,
+				cachedTargetName: null,
 				noteText
 			});
 
@@ -273,7 +198,7 @@ class PoiTpAudit {
 
 				resolvedStatus,
 				resolvedTargetName: resolved.name ?? null,
-				cachedTargetName: cached ?? null,
+				cachedTargetName: null,
 				displayTargetName: bestNameCandidate,
 
 				releaseHint: hint.releaseHint ?? null,
@@ -283,71 +208,6 @@ class PoiTpAudit {
 		}
 
 		return out;
-	}
-
-	/**
-	 * Walk every scene in the world, resolve each POI note's target journal,
-	 * and — when the name matches the strict Beneos POI-Teleporter pattern —
-	 * write/refresh the Beneos binding flags. Intended for one-time
-	 * content-preparation runs on the internal Beneos setup world.
-	 *
-	 * Skips notes with `userOverride === true` (GM explicitly decided).
-	 * Uses a no-op compare so repeated runs don't flood the update log.
-	 *
-	 * @param {(progress:{scene:number,scenesTotal:number,notesScanned:number,updated:number,skippedUserOverride:number})=>void} onProgress
-	 * @returns {Promise<{scenesProcessed:number,notesScanned:number,updated:number,skippedUserOverride:number}>}
-	 */
-	static async backfillBeneosFlagsInWorld({ onProgress } = {}) {
-		const scenes = Array.from(game.scenes ?? []);
-		const scenesTotal = scenes.length;
-
-		let scene = 0;
-		let notesScanned = 0;
-		let updated = 0;
-		let skippedUserOverride = 0;
-
-		const batchSize = 10;
-		for (let i = 0; i < scenes.length; i += batchSize) {
-			const batch = scenes.slice(i, i + batchSize);
-			for (const s of batch) {
-				const notes = s?.notes?.contents ?? [];
-				for (const note of notes) {
-					notesScanned++;
-
-					const existing = note.flags?.[this.MODULE_ID] ?? {};
-					if (existing.userOverride === true) {
-						skippedUserOverride++;
-						continue;
-					}
-
-					const ref = this.getNoteTargetRef(note);
-					const resolved = this.resolveTarget(ref);
-					if (resolved.status !== "OK") continue;
-
-					const hint = this.parseReleaseHint(resolved.name);
-					if (!hint.isBeneos) continue;
-
-					const next = this.computeBeneosFlags(resolved.name);
-					if (this.beneosFlagsEqual(existing, next)) continue;
-
-					try {
-						await note.update({
-							flags: {
-								[this.MODULE_ID]: { ...existing, ...next }
-							}
-						});
-						updated++;
-					} catch (e) {
-						// Non-fatal — keep scanning.
-					}
-				}
-				scene++;
-			}
-			onProgress?.({ scene, scenesTotal, notesScanned, updated, skippedUserOverride });
-			await new Promise(r => setTimeout(r, 0));
-		}
-
-		return { scenesProcessed: scene, notesScanned, updated, skippedUserOverride };
 	}
 
 	/**
@@ -486,95 +346,6 @@ class PoiTpAuditApp extends AuditHbMixin(AuditAppV2) {
 		const text = `${rec.sourceSceneName} → ${rec.displayTargetName ?? rec.intendedTargetId ?? '???'} (${rec.resolvedStatus})`;
 		await navigator.clipboard.writeText(text);
 		ui.notifications?.info(game.i18n.localize("poitp.audit.copied"));
-	}
-}
-
-/**
- * Backfill application window: weltweit Beneos-Flags auf alle POI-Notes schreiben.
- * Nur im Setup-Mode wirklich nutzbar.
- */
-class PoiTpBackfillApp extends AuditHbMixin(AuditAppV2) {
-	static DEFAULT_OPTIONS = {
-		id: "poitp-backfill-app",
-		classes: ["poitp-backfill-app"],
-		position: { width: 520, height: "auto" },
-		window: {
-			title: "poitp.backfill.title",
-			icon: "fas fa-tags",
-			resizable: false
-		},
-		actions: {
-			runBackfill: PoiTpBackfillApp._onRun
-		}
-	};
-
-	static PARTS = {
-		main: {
-			template: "modules/poi-teleport/templates/poi-backfill.html"
-		}
-	};
-
-	constructor(...args) {
-		super(...args);
-		this.running = false;
-		this.progress = null;
-		this.summary = null;
-	}
-
-	async _prepareContext() {
-		let setupMode = false;
-		try {
-			setupMode = game.settings.get(PoiTpAudit.MODULE_ID, "setupMode") === true;
-		} catch (e) { /* ignore */ }
-		return {
-			running: this.running,
-			progress: this.progress,
-			summary: this.summary,
-			setupMode
-		};
-	}
-
-	static async _onRun() {
-		const setupMode = game.settings.get(PoiTpAudit.MODULE_ID, "setupMode") === true;
-		if (!setupMode) {
-			ui.notifications?.warn(game.i18n.localize("poitp.backfill.needSetupMode"));
-			return;
-		}
-
-		const DialogV2 = foundry.applications?.api?.DialogV2;
-		let confirmed = true;
-		if (DialogV2?.confirm) {
-			confirmed = await DialogV2.confirm({
-				window: { title: game.i18n.localize("poitp.backfill.confirmTitle") },
-				content: `<p>${game.i18n.localize("poitp.backfill.confirmBody")}</p>`,
-				rejectClose: false,
-				modal: true
-			});
-		}
-		if (!confirmed) return;
-
-		this.running = true;
-		this.summary = null;
-		this.progress = { scene: 0, scenesTotal: 0, notesScanned: 0, updated: 0, skippedUserOverride: 0 };
-		this.render({ force: true });
-
-		const result = await PoiTpAudit.backfillBeneosFlagsInWorld({
-			onProgress: (p) => {
-				this.progress = p;
-				this.render({ force: false });
-			}
-		});
-
-		this.running = false;
-		this.summary = result;
-		this.render({ force: true });
-
-		ui.notifications?.info(
-			game.i18n.format("poitp.backfill.doneNotification", {
-				updated: result.updated,
-				scenes: result.scenesProcessed
-			})
-		);
 	}
 }
 
