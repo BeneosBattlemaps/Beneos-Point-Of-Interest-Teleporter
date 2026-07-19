@@ -1,5 +1,10 @@
 # Changelog
 
+## v14.1.3 ## 2026-07-19 — Reliable Destination Detection
+- **Fixed:** Right-clicking a teleporter pin whose destination is a rotated or tile-based battlemap no longer shows a false "install release" message. Those maps ship without a classic scene background and were wrongly treated as not installed, so navigation to them now works as expected.
+- **Changed:** Install detection is now a single, simple rule: if a scene in your world is assigned the pin's destination journal, the destination counts as installed and the pin travels there; if no scene is assigned that journal, the pin shows the install hint (release number read from the journal name). The old background/content heuristic has been removed.
+- **Changed:** Destination lookup now matches on the journal entry itself, so a pin resolves its scene whether the scene links the whole journal or a single journal page.
+
 ## v14.1.2 ## 2026-07-18
 - **Update:**  We have now implemented a quick-installation feature for Beneos Battlemaps content.
 

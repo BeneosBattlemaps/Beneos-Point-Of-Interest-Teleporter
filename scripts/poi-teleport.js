@@ -138,6 +138,61 @@ class PointOfInterestTeleporter {
 	}
 
 	/**
+	 * Resolve the parent JournalEntry a note reference points at, regardless of
+	 * whether the note references the whole entry or a single page.
+	 *
+	 * @param {string|null} entryId
+	 * @param {string|null} pageId
+	 * @return {JournalEntry|null}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static resolveNoteJournal(entryId, pageId) {
+		if (entryId) return game.journal?.get(entryId) ?? null;
+		if (pageId) {
+			for (const entry of game.journal ?? []) {
+				if (entry.pages?.get?.(pageId)) return entry;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Resolve the destination scene for a note reference. Shared by checkNote()
+	 * and _lookupScene() so both paths stay in sync.
+	 *
+	 * The rule is deliberately simple: a scene that is assigned this journal
+	 * entry IS the installed destination. Whether the scene links the whole
+	 * entry or a single page does not matter, because scene.journal always
+	 * resolves to the parent JournalEntry (page-linked scenes keep it set too).
+	 * If no scene is assigned the journal, the destination is not installed and
+	 * the caller shows the install hint (release number parsed from the journal
+	 * name). We intentionally do NOT inspect the scene's background or content:
+	 * a scene document existing in the world means it is navigable.
+	 *
+	 * @param {JournalEntry|null} journal  resolved parent entry of the note ref
+	 * @param {string|null} pageId         specific page id the note targets (opt)
+	 * @return {Scene|null}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static resolveDestinationScene(journal, pageId) {
+		if (!journal) return null;
+
+		// Every scene assigned this journal entry (page-linked scenes included,
+		// since scene.journal resolves to the parent entry).
+		const matches = game.scenes.filter(s => s.journal?.id === journal.id);
+		if (matches.length === 0) return null;
+
+		// When the note targets a specific page and several scenes share the
+		// entry, prefer the scene linked to that exact page. scene.journalEntryPage
+		// is the raw page-id string in every Foundry version.
+		if (pageId) {
+			const exact = matches.find(s => s.journalEntryPage === pageId);
+			if (exact) return exact;
+		}
+		return matches[0];
+	}
+
+	/**
 	 * Checks if the supplied note is associated with a scene.
 	 *
 	 * Three cases:
@@ -227,53 +282,16 @@ class PointOfInterestTeleporter {
 			return;
 		}
 
-		// Regular POI → look up the target scene
-		let scene = null;
-
-		// Collect every matching scene. A release that was later installed can
-		// leave its repack placeholder behind alongside the real scene, so we
-		// prefer a real (non-placeholder) match over a placeholder one.
-		let matches = [];
-		if (hasPageId) {
-			// Scene.journalEntryPage is always the raw pageId string
-			matches = game.scenes.filter(s => s.journalEntryPage === notePageId);
-		} else if (hasEntryId) {
-			// Scene.journal is a resolved JournalEntry document (compare via .id)
-			matches = game.scenes.filter(s => !s.journalEntryPage && s.journal?.id === noteEntryId);
-		}
-		scene = matches.find(s => !this.sceneIsUninstalledPlaceholder(s)) ?? matches[0] ?? null;
-
-		// New-repack model: a not-installed Beneos release ships a placeholder
-		// scene (background.src null) that links to the teleporter journal, so
-		// the lookup above resolves it. Treat such a placeholder as "destination
-		// not installed" so the install hint/menu shows instead of View/Activate.
-		// Gated to Beneos notes so genuinely empty user scenes stay navigable.
-		const binding = PointOfInterestTeleporter.parseBinding(journal?.name);
-		if (scene && binding.isBeneos && this.sceneIsUninstalledPlaceholder(scene)) {
-			scene = null;
-		}
+		// Regular POI → look up the target scene via the shared resolver.
+		// A scene assigned this journal (the note's already-resolved parent entry)
+		// is the installed destination; no scene assigned → missing destination.
+		const scene = this.resolveDestinationScene(journal, hasPageId ? notePageId : null);
 
 		// Wait for mouse interaction manager (needed to attach right-click handler)
 		if (!await this.waitFor(note, "mouseInteractionManager", 60)) return;
 
 		// scene found → navigation menu; scene null → error menu (missing destination)
 		new PointOfInterestTeleporter(note, scene ?? null, null);
-	}
-
-	/**
-	 * Whether a resolved scene is an uninstalled placeholder, i.e. it has no
-	 * real background asset. Beneos repacks ship such placeholder scenes for
-	 * releases whose battlemap assets are not installed in the world.
-	 * V13 reads scene.background.src; V14 prefers scene.firstLevel.background.src.
-	 *
-	 * @param {Scene} scene
-	 * @return {boolean}
-	 * @memberof PointOfInterestTeleporter
-	 */
-	static sceneIsUninstalledPlaceholder(scene) {
-		if (!scene) return false;
-		const src = scene.firstLevel?.background?.src ?? scene.background?.src ?? null;
-		return !src || String(src).trim() === "";
 	}
 
 	/**
@@ -512,9 +530,9 @@ class PointOfInterestTeleporter {
 	}
 
 	/**
-	 * Resolve the destination scene this note points at, applying the same
-	 * placeholder filtering as checkNote(): prefer a real (installed) scene over
-	 * a not-installed placeholder, and treat a lone placeholder as "missing".
+	 * Resolve the destination scene this note points at, using the same simple
+	 * rule as checkNote(): a scene assigned the note's journal is the installed
+	 * destination; no such scene means the destination is not installed.
 	 *
 	 * @return {Scene|null}
 	 * @memberof PointOfInterestTeleporter
@@ -525,15 +543,10 @@ class PointOfInterestTeleporter {
 		const pageId = (doc.pageId && doc.pageId.trim() !== "") ? doc.pageId : null;
 		const entryId = (doc.entryId && doc.entryId.trim() !== "") ? doc.entryId : null;
 
-		let matches = [];
-		if (pageId) matches = game.scenes.filter(s => s.journalEntryPage === pageId);
-		else if (entryId) matches = game.scenes.filter(s => !s.journalEntryPage && s.journal?.id === entryId);
+		const journal = PointOfInterestTeleporter.resolveNoteJournal(entryId, pageId);
+		if (!journal) return null;
 
-		let scene = matches.find(s => !PointOfInterestTeleporter.sceneIsUninstalledPlaceholder(s)) ?? matches[0] ?? null;
-		if (scene && this._resolveBeneosBinding().isBeneos && PointOfInterestTeleporter.sceneIsUninstalledPlaceholder(scene)) {
-			scene = null;
-		}
-		return scene;
+		return PointOfInterestTeleporter.resolveDestinationScene(journal, pageId);
 	}
 
 	/**
