@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "目的地不在此世界中。請安裝 Beneos Battlemaps Release {release} (地圖 {map})。",
 	"poitp.destinationInstallReleaseMapType": "目的地不在此世界中。請安裝 Beneos Battlemaps Release {release} (地圖 {map}, {type})。",
 	"poitp.destinationInstallEscalia": "目的地不在此世界中。請安裝 Beneos Custom World Map: Escalia。",
+	"poitp.installMissingPack": "安裝缺少的資源包",
+	"poitp.installApiMissing": "安裝此資源包需要 Beneos 模組。",
+	"poitp.installReadyNotice": "已安裝發行版。「{name}」現已可用，再次右鍵點擊圖示即可前往。",
+	"poitp.installNamedRelease": "安裝 {title}",
+	"poitp.installNoDestination": "「{title}」已安裝，但其中沒有對應此目的地的場景。請回報給 Beneos。",
+	"poitp.destReleaseLine": "{title}（發行版 {label}）",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "場景：{scene}",
+	"poitp.destAlsoIn": "另有 {count} 個發行版也包含此內容",
+	"poitp.destUnknownRelease": "Beneos 無法判斷哪個發行版包含此目的地。",
+	"poitp.destNumberHintOnly": "名稱指向發行版 {release}（未驗證）",
+	"poitp.browseCloud": "在 Beneos Cloud 中搜尋",
 
 	"poitp.contentType.navigation":    "左鍵點擊以傳送角色",
 	"poitp.contentType.handout":       "左鍵雙擊以開啟",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill 完成",
 	"poitp.backfill.confirmTitle":"執行 Beneos Backfill?",
 	"poitp.backfill.confirmBody": "這將掃描世界中每個場景,為目標 journal 符合 Beneos 模式的所有 POI 筆記寫入 Beneos 綁定旗標。可能影響大量筆記並需要一些時間。要繼續嗎?",
-	"poitp.backfill.doneNotification": "Backfill 完成 — 在 {scenes} 個場景中更新了 {updated} 個筆記。"
+	"poitp.backfill.doneNotification": "Backfill 完成: 在 {scenes} 個場景中更新了 {updated} 個筆記。"
 }

@@ -64,8 +64,11 @@ class PoiTpAudit {
 		const pageId = noteDoc?.pageId ?? noteDoc?.document?.pageId ?? noteDoc?.page?.id ?? noteDoc?.document?.page?.id;
 		const entryId = noteDoc?.entryId ?? noteDoc?.document?.entryId ?? noteDoc?.entry?.id ?? noteDoc?.document?.entry?.id;
 
-		if (pageId != null) return { type: "page", id: pageId };
+		// entryId wins, matching the runtime resolver in poi-teleport.js. The
+		// previous order preferred pageId, so audit and runtime could report
+		// different targets for one and the same note.
 		if (entryId != null) return { type: "entry", id: entryId };
+		if (pageId != null) return { type: "page", id: pageId };
 		return { type: "none", id: null };
 	}
 
@@ -102,7 +105,12 @@ class PoiTpAudit {
 	 * Handouts, Navigation-, Lore-, and Documentation-journals do NOT match
 	 * and must not be auto-flagged.
 	 *
-	 * Returns { hintKind, releaseHint?, mapHint?, typeHint?, isBeneos }
+	 * Returns { hintKind, releaseHint?, releaseToken?, mapHint?, typeHint?, isBeneos }
+	 *
+	 * `releaseToken` keeps the letter suffix ("57b"); `releaseHint` stays an
+	 * integer for backwards compatibility. Neither is used to pick a download any
+	 * more, only to label the message: the release itself is resolved from the
+	 * journal id against the Beneos index.
 	 */
 	static parseReleaseHint(nameCandidate) {
 		if (!nameCandidate || typeof nameCandidate !== "string") {
@@ -116,16 +124,24 @@ class PoiTpAudit {
 		}
 
 		// Regular release pattern: DontTouch-POI-Teleporter-RELEASE(-MAP(-TYPE)?)?
-		const m = nameCandidate.match(/^DontTouch-POI-Teleporter-(\d+)(?:-(\d+))?(?:-([A-Z]+))?/);
+		// The optional letter suffix used to be silently dropped, which made every
+		// letter release (0020b, 0042c, 0057b, ...) report its base number.
+		const m = nameCandidate.match(/^DontTouch-POI-Teleporter-(\d{1,4})([a-z]?)(?:-(\d+))?(?:-([A-Z]+))?/);
 		if (m) {
 			const release = parseInt(m[1], 10);
 			if (!Number.isNaN(release)) {
-				const out = { hintKind: "release", releaseHint: release, isBeneos: true };
-				if (m[2] != null) {
-					const map = parseInt(m[2], 10);
+				const suffix = (m[2] || "").toLowerCase();
+				const out = {
+					hintKind: "release",
+					releaseHint: release,
+					releaseToken: `${release}${suffix}`,
+					isBeneos: true
+				};
+				if (m[3] != null) {
+					const map = parseInt(m[3], 10);
 					if (!Number.isNaN(map)) out.mapHint = map;
 				}
-				if (m[3]) out.typeHint = m[3];
+				if (m[4]) out.typeHint = m[4];
 				return out;
 			}
 		}

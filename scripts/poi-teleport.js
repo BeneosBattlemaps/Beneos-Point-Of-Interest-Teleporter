@@ -291,10 +291,18 @@ class PointOfInterestTeleporter {
 		// and left to Foundry's default behaviour.
 		if (!journal) {
 			// Journal genuinely missing (rare now that destination journals ship
-			// in every pack). Fall back to the note label to decide Beneos-ness;
-			// non-Beneos orphan notes bail out and keep Foundry's default behaviour.
+			// in every pack). The note label is the only name left, and it is not
+			// conclusive, so ask the Beneos index about the id as well. A document
+			// id from a third-party world is never in that index, which is what
+			// keeps this harmless in worlds that are not ours.
 			const binding = PointOfInterestTeleporter.parseBinding(noteDoc.text);
-			if (!binding.isBeneos) return;
+			let indexKind = "";
+			if (!binding.isBeneos && hasEntryId && PointOfInterestTeleporter.hasBeneosIndex()) {
+				try {
+					indexKind = await game.beneos.api.classifyBeneosJournal(noteEntryId) ?? "";
+				} catch (_e) { /* index unavailable: fall back to the label */ }
+			}
+			if (!binding.isBeneos && !indexKind) return;
 
 			if (!await this.waitFor(note, "mouseInteractionManager", 60)) return;
 			const missingNoteText = noteDoc.text?.toLowerCase() ?? "";
@@ -307,6 +315,8 @@ class PointOfInterestTeleporter {
 				missingContentType = "lore";
 			} else if (missingNoteText.includes("documentation")) {
 				missingContentType = "documentation";
+			} else if (indexKind === "content") {
+				missingContentType = "generic";
 			}
 			new PointOfInterestTeleporter(note, null, missingContentType);
 			return;
@@ -379,7 +389,7 @@ class PointOfInterestTeleporter {
 	 * @param {Event} event - The event that triggered this callback
 	 * @memberof PointOfInterestTeleporter
 	 */
-	_contextMenu(event) {
+	async _contextMenu(event) {
 		event.stopPropagation();
 
 		const now = Date.now();
@@ -399,6 +409,13 @@ class PointOfInterestTeleporter {
 			ui.notifications?.warn(game.i18n.localize("poitp.destinationNotInWorld"));
 			return;
 		}
+
+		// Resolve the destination release before the menu is built, so the first
+		// render already shows the release name instead of flashing a placeholder.
+		// The index is loaded once per session and cached in memory, so every call
+		// after the first is a map lookup.
+		if (!this.scene && !this.contentType) await this._resolveTarget();
+
 		canvas.hud.poiTp.bind(this);
 	}
 
@@ -462,10 +479,75 @@ class PointOfInterestTeleporter {
 			isBeneos: parsed?.isBeneos === true,
 			hintKind: parsed?.hintKind ?? "none",
 			releaseHint: parsed?.releaseHint ?? null,
+			releaseToken: parsed?.releaseToken ?? null,
 			mapHint: parsed?.mapHint ?? null,
 			typeHint: parsed?.typeHint ?? null,
 			name: name ?? null
 		};
+	}
+
+	/**
+	 * Whether the Beneos index API is available in this world.
+	 *
+	 * This is the hard boundary for third-party worlds. Without the Beneos module
+	 * there is no index, no lookup, no install offer and no cloud request: POI
+	 * behaves like any generic teleporter module and a missing destination simply
+	 * says so. Nothing below this gate may run for somebody else's content.
+	 *
+	 * @return {boolean}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static hasBeneosIndex() {
+		if (!game.modules?.get?.("beneos-module")?.active) return false;
+		const api = game.beneos?.api;
+		if (!api) return false;
+		if (!(Number(api.capabilities?.poiIndex) >= 1)) return false;
+		return typeof api.resolveReleaseForJournal === "function";
+	}
+
+	/**
+	 * Ask the Beneos module which release provides this note's destination.
+	 * Cached per teleporter instance: the answer only changes after an install,
+	 * and that path refreshes it explicitly.
+	 *
+	 * @return {Promise<object|null>} resolution, or null when unavailable
+	 * @memberof PointOfInterestTeleporter
+	 */
+	async _resolveTarget() {
+		if (this._resolution !== undefined) return this._resolution;
+		this._resolution = null;
+		if (!PointOfInterestTeleporter.hasBeneosIndex()) return null;
+
+		const doc = this.note?.document;
+		const entryId = (doc?.entryId && doc.entryId.trim() !== "") ? doc.entryId : null;
+		const b = this._resolveBeneosBinding();
+
+		try {
+			this._resolution = await game.beneos.api.resolveReleaseForJournal(entryId, {
+				journalName: b.name,
+				releaseToken: b.releaseToken,
+				releaseHint: b.releaseHint
+			}) ?? null;
+		} catch (err) {
+			console.warn("poi-teleport | resolveReleaseForJournal failed", err);
+			this._resolution = null;
+		}
+		return this._resolution;
+	}
+
+	/**
+	 * Is this note a Beneos teleporter?
+	 *
+	 * The journal name is only conclusive while the journal document is in the
+	 * world. When it is not, the index decides: a document id from a foreign
+	 * world is never in it, so this can not misfire on third-party content.
+	 *
+	 * @return {boolean}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_isBeneosTarget() {
+		if (this._resolveBeneosBinding().isBeneos) return true;
+		return this._resolution?.kind === "teleport";
 	}
 
 	/**
@@ -490,7 +572,7 @@ class PointOfInterestTeleporter {
 		const b = this._resolveBeneosBinding();
 
 		// Not a Beneos teleporter → neutral, non-Beneos message.
-		if (!b.isBeneos) {
+		if (!b.isBeneos && !this._isBeneosTarget()) {
 			return game.i18n.localize("poitp.destinationNotConfigured");
 		}
 
@@ -537,9 +619,131 @@ class PointOfInterestTeleporter {
 	 */
 	_canInstallMissingPack() {
 		if (!game.user?.isGM) return false;
-		if (!this._resolveBeneosBinding().isBeneos) return false;
+		if (!this._isBeneosTarget()) return false;
 		if (!game.modules?.get?.("beneos-module")?.active) return false;
+		if (typeof game.beneos?.api?.installReleaseForTarget === "function") return true;
 		return typeof game.beneos?.api?.installReleaseByNumber === "function";
+	}
+
+	/**
+	 * Build the menu rows for a missing destination.
+	 *
+	 * Three states, and the difference between them is what the module actually
+	 * knows rather than what it can guess:
+	 *
+	 *   A  the index resolved the destination  -> name the release and offer it
+	 *   B  as A, but several releases provide it -> add a "choose" entry
+	 *   C  nothing verified                    -> say so, show the unverified
+	 *      number hint for information only, and offer the cloud browser
+	 *
+	 * The number parsed from the journal name is never used to start a download.
+	 * It is a label, and in state C it is explicitly marked as unverified.
+	 *
+	 * @return {ContextMenuOption[]}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_missingDestinationOptions() {
+		const infoRow = (title) => ({ icon: "", title, rawTitle: true, disabled: true, info: true });
+		const r = this._resolution;
+
+		// No index available (no Beneos module, or an older build): exactly the
+		// previous behaviour, message and all.
+		if (!r) {
+			const items = [{
+				icon: '<i class="fas fa-exclamation-triangle fa-fw"></i>',
+				title: this.getReleaseMessage(),
+				rawTitle: true,
+				disabled: true,
+				error: true
+			}];
+			if (this._canInstallMissingPack()) {
+				items.push({
+					icon: '<i class="fas fa-cloud-download-alt fa-fw"></i>',
+					title: "poitp.installMissingPack",
+					trigger: "installMissingPack"
+				});
+			}
+			return items;
+		}
+
+		// A content journal is not a destination at all. It never gets a download
+		// offer, however much its name may look like a release.
+		if (r.kind === "content") {
+			return [infoRow(game.i18n.localize("poitp.contentType.generic"))];
+		}
+
+		const items = [{
+			icon: '<i class="fas fa-exclamation-triangle fa-fw"></i>',
+			title: game.i18n.localize("poitp.destinationNotInWorld"),
+			rawTitle: true,
+			disabled: true,
+			error: true
+		}];
+
+		if (r.found && r.title) {
+			// --- state A / B: we know the release that ships the destination.
+			items.push(infoRow(r.label
+				? game.i18n.format("poitp.destReleaseLine", { title: r.title, label: r.label })
+				: game.i18n.format("poitp.destReleaseLineNoNum", { title: r.title })));
+
+			if (r.sceneName) items.push(infoRow(game.i18n.format("poitp.destSceneLine", { scene: r.sceneName })));
+
+			// Release already present but still no destination scene: the pack does
+			// not contain what the pin needs. Say it instead of offering a re-install.
+			if (r.installed) {
+				items.push(infoRow(game.i18n.format("poitp.installNoDestination", { title: r.title })));
+				return items;
+			}
+
+			if (r.ambiguous) {
+				items.push(infoRow(game.i18n.format("poitp.destAlsoIn", { count: Math.max(0, r.candidates.length - 1) })));
+			}
+
+			if (this._canInstallMissingPack()) {
+				items.push({
+					icon: '<i class="fas fa-cloud-download-alt fa-fw"></i>',
+					title: game.i18n.format("poitp.installNamedRelease", { title: r.title }),
+					rawTitle: true,
+					trigger: "installMissingPack"
+				});
+			}
+			return items;
+		}
+
+		// --- state C: nothing verified.
+		items.push(infoRow(game.i18n.localize("poitp.destUnknownRelease")));
+
+		const b = this._resolveBeneosBinding();
+		const hint = b.releaseToken ?? (b.releaseHint != null ? String(b.releaseHint) : null);
+		if (hint) items.push(infoRow(game.i18n.format("poitp.destNumberHintOnly", { release: hint })));
+
+		if (game.user?.isGM && game.modules?.get?.("beneos-module")?.active) {
+			items.push({
+				icon: '<i class="fas fa-cloud fa-fw"></i>',
+				title: "poitp.browseCloud",
+				trigger: "browseCloud"
+			});
+		}
+		return items;
+	}
+
+	/**
+	 * Open the Beneos cloud browser so the user can look for the release
+	 * themselves. Used when the index could not verify a destination, in place of
+	 * the old fuzzy name match that would silently download an unrelated pack.
+	 *
+	 * @memberof PointOfInterestTeleporter
+	 */
+	browseCloud() {
+		canvas.hud?.poiTp?.close?.();
+		const install = game.beneos?.api?.installReleaseForTarget;
+		if (typeof install !== "function") {
+			return ui.notifications?.warn(game.i18n.localize("poitp.installApiMissing"));
+		}
+		// Resolution already failed, so this call falls straight through to the
+		// browser without proposing anything.
+		Promise.resolve(install({ journalId: null, journalName: null }))
+			.catch(err => console.warn("poi-teleport | browseCloud failed", err));
 	}
 
 	/**
@@ -553,26 +757,38 @@ class PointOfInterestTeleporter {
 	installMissingPack() {
 		canvas.hud?.poiTp?.close?.();
 
-		const install = game.beneos?.api?.installReleaseByNumber;
-		if (typeof install !== "function") {
-			return ui.notifications?.warn(game.i18n.localize("poitp.installApiMissing"));
-		}
-
 		const b = this._resolveBeneosBinding();
-		let releaseNum;
-		if (b.hintKind === "release" && b.releaseHint != null) releaseNum = b.releaseHint;
-		else if (b.hintKind === "dia96") releaseNum = 96;
+		const doc = this.note?.document;
+		const journalId = (doc?.entryId && doc.entryId.trim() !== "") ? doc.entryId : null;
 
-		// releaseNum may be undefined (e.g. Escalia / Landing Page / other special
-		// release with no numeric hint). We pass the journal name so the API can
-		// resolve it against the cloud catalog's display_name; failing that it
-		// opens the cloud browser so the user is never stuck.
-		//
 		// The API promise resolves only AFTER the native installer has created the
 		// scene documents, so we can re-resolve our destination immediately and
 		// flip this teleporter to "navigation" without a reload.
-		Promise.resolve(install(releaseNum, { mapHint: b.mapHint, typeHint: b.typeHint, name: b.name }))
-			.then(() => this._refreshDestinationAfterInstall())
+		let call;
+		if (typeof game.beneos?.api?.installReleaseForTarget === "function") {
+			// Preferred path: hand over the journal id, which is the only stable key.
+			call = game.beneos.api.installReleaseForTarget({
+				journalId,
+				journalName: b.name,
+				releaseToken: b.releaseToken,
+				releaseHint: b.releaseHint,
+				mapHint: b.mapHint,
+				typeHint: b.typeHint
+			});
+		} else if (typeof game.beneos?.api?.installReleaseByNumber === "function") {
+			// Older beneos-module in the field. Still pass the journal id: builds
+			// that understand it resolve properly, older ones just ignore it.
+			let releaseNum;
+			if (b.hintKind === "release" && b.releaseHint != null) releaseNum = b.releaseHint;
+			call = game.beneos.api.installReleaseByNumber(releaseNum, {
+				journalId, mapHint: b.mapHint, typeHint: b.typeHint, name: b.name
+			});
+		} else {
+			return ui.notifications?.warn(game.i18n.localize("poitp.installApiMissing"));
+		}
+
+		Promise.resolve(call)
+			.then(result => this._refreshDestinationAfterInstall(result))
 			.catch(err => {
 				console.warn("poi-teleport | installMissingPack failed", err);
 				ui.notifications?.error(game.i18n.localize("poitp.installApiMissing"));
@@ -607,12 +823,34 @@ class PointOfInterestTeleporter {
 	 *
 	 * @memberof PointOfInterestTeleporter
 	 */
-	_refreshDestinationAfterInstall() {
+	_refreshDestinationAfterInstall(result) {
+		// Drop the cached resolution: the world changed under us.
+		this._resolution = undefined;
+
 		const scene = this._lookupScene();
-		if (!scene) return;
-		this.scene = scene;
-		this.contentType = null;
-		ui.notifications?.info(game.i18n.format("poitp.installReadyNotice", { name: scene.name }));
+		if (scene) {
+			this.scene = scene;
+			this.contentType = null;
+			ui.notifications?.info(game.i18n.format("poitp.installReadyNotice", { name: scene.name }));
+			return;
+		}
+
+		// Nothing was installed (cancelled, no access, browser opened): silence is
+		// the right answer, the user made that choice.
+		if (result && result.status !== "installed") return;
+
+		// Installed, and still no destination. Previously this returned silently,
+		// which is the worst possible outcome: the user has just downloaded
+		// gigabytes and gets no feedback at all. Say what happened.
+		const title = result?.title || result?.releaseDir || this._resolveBeneosBinding().name || "";
+		console.warn("poi-teleport | install produced no destination", {
+			journalId: this.note?.document?.entryId ?? null,
+			journalName: this._resolveBeneosBinding().name ?? null,
+			releaseDir: result?.releaseDir ?? null,
+			resolvedBy: result?.resolvedBy ?? null,
+			indexVersion: result?.indexVersion ?? null
+		});
+		ui.notifications?.warn(game.i18n.format("poitp.installNoDestination", { title }));
 	}
 
 	/**
@@ -649,32 +887,11 @@ class PointOfInterestTeleporter {
 			}];
 		}
 
-		// Missing destination → disabled error item with release detection.
-		// Config access is intentionally not offered here — GMs reach the note
-		// configuration via double-right-click on the icon.
-		if (!this.scene) {
-			const items = [{
-				icon: '<i class="fas fa-exclamation-triangle fa-fw"></i>',
-				title: this.getReleaseMessage(),
-				rawTitle: true,
-				disabled: true,
-				error: true
-			}];
-
-			// When the Beneos module is installed, offer a one-click install of
-			// the missing release straight from here. Gated to GMs and Beneos
-			// notes; the heavy lifting (access check, confirmation with 4K/HD +
-			// download size, the installer itself) lives behind the Beneos API.
-			if (this._canInstallMissingPack()) {
-				items.push({
-					icon: '<i class="fas fa-cloud-download-alt fa-fw"></i>',
-					title: "poitp.installMissingPack",
-					trigger: "installMissingPack"
-				});
-			}
-
-			return items;
-		}
+		// Missing destination → named release plus a one-click install when the
+		// index could verify it, an honest "unknown" otherwise. Config access is
+		// intentionally not offered here: GMs reach the note configuration via
+		// double-right-click on the icon.
+		if (!this.scene) return this._missingDestinationOptions();
 
 		const options = [
 			{

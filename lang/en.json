@@ -19,6 +19,15 @@
 	"poitp.installMissingPack": "Install Missing Pack",
 	"poitp.installApiMissing": "The Beneos module is required to install this pack.",
 	"poitp.installReadyNotice": "Release installed. '{name}' is now available; right-click the icon again to travel there.",
+	"poitp.installNamedRelease": "Install {title}",
+	"poitp.installNoDestination": "'{title}' is installed, but it contains no scene for this destination. Please report this to Beneos.",
+	"poitp.destReleaseLine": "{title} (Release {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Scene: {scene}",
+	"poitp.destAlsoIn": "Also available in {count} other releases",
+	"poitp.destUnknownRelease": "Beneos could not determine which release contains this destination.",
+	"poitp.destNumberHintOnly": "Name suggests Release {release} (unverified)",
+	"poitp.browseCloud": "Search in Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Left click to teleport characters",
 	"poitp.contentType.handout":       "Double-left-click to open",
@@ -75,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill complete",
 	"poitp.backfill.confirmTitle":"Backfill Beneos Flags?",
 	"poitp.backfill.confirmBody": "This will scan every scene in the world and write Beneos binding flags to every POI note whose target journal matches the strict Beneos naming pattern. This can touch a large number of notes and may take a while. Continue?",
-	"poitp.backfill.doneNotification": "Backfill complete — {updated} notes updated across {scenes} scenes."
+	"poitp.backfill.doneNotification": "Backfill complete: {updated} notes updated across {scenes} scenes."
 }

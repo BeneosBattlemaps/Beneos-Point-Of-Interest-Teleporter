@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "Destino não está no teu mundo. Instala Beneos Battlemaps Release {release} (Mapa {map}).",
 	"poitp.destinationInstallReleaseMapType": "Destino não está no teu mundo. Instala Beneos Battlemaps Release {release} (Mapa {map}, {type}).",
 	"poitp.destinationInstallEscalia": "Destino não está no teu mundo. Instala Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Instalar pacote em falta",
+	"poitp.installApiMissing": "O módulo Beneos é necessário para instalar este pacote.",
+	"poitp.installReadyNotice": "Lançamento instalado. '{name}' está agora disponível; clique com o botão direito no ícone para viajar até lá.",
+	"poitp.installNamedRelease": "Instalar {title}",
+	"poitp.installNoDestination": "'{title}' está instalado, mas não contém nenhuma cena para este destino. Comunique isto à Beneos.",
+	"poitp.destReleaseLine": "{title} (lançamento {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Cena: {scene}",
+	"poitp.destAlsoIn": "Também disponível em mais {count} lançamentos",
+	"poitp.destUnknownRelease": "A Beneos não conseguiu determinar que lançamento contém este destino.",
+	"poitp.destNumberHintOnly": "O nome sugere o lançamento {release} (não verificado)",
+	"poitp.browseCloud": "Procurar na Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Clique esquerdo para teletransportar as personagens",
 	"poitp.contentType.handout":       "Duplo clique esquerdo para abrir",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill concluído",
 	"poitp.backfill.confirmTitle":"Executar backfill Beneos?",
 	"poitp.backfill.confirmBody": "Isto vai analisar todas as cenas do mundo e escrever flags de ligação Beneos em todas as notas POI cujo journal de destino corresponde ao padrão Beneos. Pode afetar muitas notas e demorar algum tempo. Continuar?",
-	"poitp.backfill.doneNotification": "Backfill concluído — {updated} notas atualizadas em {scenes} cenas."
+	"poitp.backfill.doneNotification": "Backfill concluído: {updated} notas atualizadas em {scenes} cenas."
 }

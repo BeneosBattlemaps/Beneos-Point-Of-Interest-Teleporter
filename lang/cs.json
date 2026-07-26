@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "Cíl není v tomto světě. Nainstalujte Beneos Battlemaps Release {release} (Mapa {map}).",
 	"poitp.destinationInstallReleaseMapType": "Cíl není v tomto světě. Nainstalujte Beneos Battlemaps Release {release} (Mapa {map}, {type}).",
 	"poitp.destinationInstallEscalia": "Cíl není v tomto světě. Nainstalujte Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Nainstalovat chybějící balíček",
+	"poitp.installApiMissing": "K instalaci tohoto balíčku je potřeba modul Beneos.",
+	"poitp.installReadyNotice": "Vydání nainstalováno. „{name}“ je nyní dostupné; klepněte pravým tlačítkem na ikonu, abyste tam přešli.",
+	"poitp.installNamedRelease": "Nainstalovat {title}",
+	"poitp.installNoDestination": "„{title}“ je nainstalováno, ale neobsahuje scénu pro tento cíl. Nahlaste to prosím Beneosu.",
+	"poitp.destReleaseLine": "{title} (vydání {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Scéna: {scene}",
+	"poitp.destAlsoIn": "Dostupné také v {count} dalších vydáních",
+	"poitp.destUnknownRelease": "Beneos nedokázal určit, které vydání obsahuje tento cíl.",
+	"poitp.destNumberHintOnly": "Název naznačuje vydání {release} (neověřeno)",
+	"poitp.browseCloud": "Hledat v Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Levým kliknutím teleportujte postavy",
 	"poitp.contentType.handout":       "Dvojklikem levým tlačítkem otevřete",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill dokončen",
 	"poitp.backfill.confirmTitle":"Spustit backfill Beneos?",
 	"poitp.backfill.confirmBody": "Proběhne analýza všech scén ve světě a zápis flagů vazby Beneos na všechny POI poznámky, jejichž journal odpovídá vzoru Beneos. Může se to týkat mnoha poznámek a nějakou dobu to trvat. Pokračovat?",
-	"poitp.backfill.doneNotification": "Backfill dokončen — {updated} poznámek aktualizováno v {scenes} scénách."
+	"poitp.backfill.doneNotification": "Backfill dokončen: {updated} poznámek aktualizováno v {scenes} scénách."
 }

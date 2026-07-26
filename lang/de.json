@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "Ziel nicht in dieser Welt. Installiere Beneos Battlemaps Release {release} (Map {map}).",
 	"poitp.destinationInstallReleaseMapType": "Ziel nicht in dieser Welt. Installiere Beneos Battlemaps Release {release} (Map {map}, {type}).",
 	"poitp.destinationInstallEscalia": "Ziel nicht in dieser Welt. Installiere Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Fehlendes Paket installieren",
+	"poitp.installApiMissing": "Zum Installieren dieses Pakets wird das Beneos-Modul benötigt.",
+	"poitp.installReadyNotice": "Release installiert. '{name}' ist jetzt verfügbar. Rechtsklick auf das Symbol, um dorthin zu reisen.",
+	"poitp.installNamedRelease": "{title} installieren",
+	"poitp.installNoDestination": "'{title}' ist installiert, enthält aber keine Szene für dieses Ziel. Bitte melde das an Beneos.",
+	"poitp.destReleaseLine": "{title} (Release {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Szene: {scene}",
+	"poitp.destAlsoIn": "Auch in {count} weiteren Releases enthalten",
+	"poitp.destUnknownRelease": "Beneos konnte nicht bestimmen, welches Release dieses Ziel enthält.",
+	"poitp.destNumberHintOnly": "Der Name deutet auf Release {release} hin (ungeprüft)",
+	"poitp.browseCloud": "In der Beneos Cloud suchen",
 
 	"poitp.contentType.navigation":    "Linksklick zum Teleportieren der Charaktere",
 	"poitp.contentType.handout":       "Doppel-Linksklick zum Öffnen",
@@ -28,7 +40,7 @@
 
 	"poitp.config.section":      "Beneos Teleporter",
 	"poitp.config.isBeneos":     "Beneos-Bindung",
-	"poitp.config.isBeneosHint": "Markiert diese Note als Beneos-Teleporter. Die Referenz bleibt erhalten, auch wenn die Zielszene fehlt — so kann eine präzise Installationsmeldung angezeigt werden.",
+	"poitp.config.isBeneosHint": "Markiert diese Note als Beneos-Teleporter. Die Referenz bleibt erhalten, auch wenn die Zielszene fehlt, sodass eine präzise Installationsmeldung angezeigt werden kann.",
 	"poitp.config.targetName":   "Referenz (Journalname)",
 	"poitp.config.release":      "Release",
 	"poitp.config.mapNum":       "Map",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill abgeschlossen",
 	"poitp.backfill.confirmTitle":"Beneos-Flags nachtragen?",
 	"poitp.backfill.confirmBody": "Dieser Vorgang durchsucht alle Szenen der Welt und schreibt Beneos-Bindungsflags auf alle POI-Notes, deren Zieljournal dem Beneos-Namensschema entspricht. Das kann viele Notes betreffen und eine Weile dauern. Fortfahren?",
-	"poitp.backfill.doneNotification": "Backfill fertig — {updated} Notes in {scenes} Szenen aktualisiert."
+	"poitp.backfill.doneNotification": "Backfill fertig: {updated} Notes in {scenes} Szenen aktualisiert."
 }

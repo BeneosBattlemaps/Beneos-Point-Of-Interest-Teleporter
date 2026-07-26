@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "대상이 이 월드에 없습니다. Beneos Battlemaps Release {release} (맵 {map})를 설치하세요.",
 	"poitp.destinationInstallReleaseMapType": "대상이 이 월드에 없습니다. Beneos Battlemaps Release {release} (맵 {map}, {type})를 설치하세요.",
 	"poitp.destinationInstallEscalia": "대상이 이 월드에 없습니다. Beneos Custom World Map: Escalia를 설치하세요.",
+	"poitp.installMissingPack": "누락된 팩 설치",
+	"poitp.installApiMissing": "이 팩을 설치하려면 Beneos 모듈이 필요합니다.",
+	"poitp.installReadyNotice": "릴리스를 설치했습니다. '{name}'을(를) 사용할 수 있습니다. 아이콘을 마우스 오른쪽 버튼으로 클릭하면 이동합니다.",
+	"poitp.installNamedRelease": "{title} 설치",
+	"poitp.installNoDestination": "'{title}'은(는) 설치되어 있지만 이 목적지에 해당하는 장면이 없습니다. Beneos에 알려 주세요.",
+	"poitp.destReleaseLine": "{title} (릴리스 {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "장면: {scene}",
+	"poitp.destAlsoIn": "다른 릴리스 {count}개에도 포함되어 있습니다",
+	"poitp.destUnknownRelease": "이 목적지가 포함된 릴리스를 확인할 수 없습니다.",
+	"poitp.destNumberHintOnly": "이름은 릴리스 {release}을(를) 가리키지만 확인되지 않았습니다",
+	"poitp.browseCloud": "Beneos Cloud에서 검색",
 
 	"poitp.contentType.navigation":    "왼쪽 클릭하여 캐릭터 순간이동",
 	"poitp.contentType.handout":       "왼쪽 더블 클릭하여 열기",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill 완료",
 	"poitp.backfill.confirmTitle":"Beneos Backfill을 실행하시겠습니까?",
 	"poitp.backfill.confirmBody": "월드의 모든 씬을 스캔하여 대상 journal이 Beneos 패턴과 일치하는 모든 POI 노트에 Beneos 바인딩 플래그를 작성합니다. 많은 노트에 영향을 줄 수 있고 시간이 걸릴 수 있습니다. 계속하시겠습니까?",
-	"poitp.backfill.doneNotification": "Backfill 완료 — {scenes}개 씬에서 {updated}개 노트를 갱신했습니다."
+	"poitp.backfill.doneNotification": "Backfill 완료: {scenes}개 씬에서 {updated}개 노트를 갱신했습니다."
 }

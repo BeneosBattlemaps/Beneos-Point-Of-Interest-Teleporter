@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "El destino no está en tu mundo. Instala Beneos Battlemaps Release {release} (Mapa {map}).",
 	"poitp.destinationInstallReleaseMapType": "El destino no está en tu mundo. Instala Beneos Battlemaps Release {release} (Mapa {map}, {type}).",
 	"poitp.destinationInstallEscalia": "El destino no está en tu mundo. Instala Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Instalar el paquete que falta",
+	"poitp.installApiMissing": "Se necesita el módulo Beneos para instalar este paquete.",
+	"poitp.installReadyNotice": "Lanzamiento instalado. «{name}» ya está disponible; haz clic derecho en el icono para viajar allí.",
+	"poitp.installNamedRelease": "Instalar {title}",
+	"poitp.installNoDestination": "«{title}» está instalado, pero no contiene ninguna escena para este destino. Comunícaselo a Beneos.",
+	"poitp.destReleaseLine": "{title} (lanzamiento {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Escena: {scene}",
+	"poitp.destAlsoIn": "También disponible en {count} lanzamientos más",
+	"poitp.destUnknownRelease": "Beneos no pudo determinar qué lanzamiento contiene este destino.",
+	"poitp.destNumberHintOnly": "El nombre sugiere el lanzamiento {release} (sin verificar)",
+	"poitp.browseCloud": "Buscar en Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Clic izquierdo para teletransportar a los personajes",
 	"poitp.contentType.handout":       "Doble clic izquierdo para abrir",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill completado",
 	"poitp.backfill.confirmTitle":"¿Ejecutar backfill Beneos?",
 	"poitp.backfill.confirmBody": "Esto escaneará todas las escenas del mundo y escribirá flags de enlace Beneos en todas las notas POI cuyo journal de destino coincida con el esquema Beneos. Puede afectar a muchas notas y tardar un rato. ¿Continuar?",
-	"poitp.backfill.doneNotification": "Backfill completado — {updated} notas actualizadas en {scenes} escenas."
+	"poitp.backfill.doneNotification": "Backfill completado: {updated} notas actualizadas en {scenes} escenas."
 }

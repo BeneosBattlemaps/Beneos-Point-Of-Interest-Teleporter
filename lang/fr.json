@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "Destination absente de ce monde. Installez Beneos Battlemaps Release {release} (Carte {map}).",
 	"poitp.destinationInstallReleaseMapType": "Destination absente de ce monde. Installez Beneos Battlemaps Release {release} (Carte {map}, {type}).",
 	"poitp.destinationInstallEscalia": "Destination absente de ce monde. Installez Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Installer le pack manquant",
+	"poitp.installApiMissing": "Le module Beneos est requis pour installer ce pack.",
+	"poitp.installReadyNotice": "Version installée. « {name} » est maintenant disponible ; faites un clic droit sur l'icône pour vous y rendre.",
+	"poitp.installNamedRelease": "Installer {title}",
+	"poitp.installNoDestination": "« {title} » est installé, mais ne contient aucune scène pour cette destination. Merci de le signaler à Beneos.",
+	"poitp.destReleaseLine": "{title} (version {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Scène : {scene}",
+	"poitp.destAlsoIn": "Également disponible dans {count} autres versions",
+	"poitp.destUnknownRelease": "Beneos n'a pas pu déterminer quelle version contient cette destination.",
+	"poitp.destNumberHintOnly": "Le nom suggère la version {release} (non vérifié)",
+	"poitp.browseCloud": "Rechercher dans le Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Clic gauche pour téléporter les personnages",
 	"poitp.contentType.handout":       "Double-clic gauche pour ouvrir",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill terminé",
 	"poitp.backfill.confirmTitle":"Lancer le backfill Beneos ?",
 	"poitp.backfill.confirmBody": "Cette opération analyse toutes les scènes du monde et écrit les flags de liaison Beneos sur toutes les notes POI dont le journal cible correspond au schéma Beneos. Cela peut affecter un grand nombre de notes et prendre un certain temps. Continuer ?",
-	"poitp.backfill.doneNotification": "Backfill terminé — {updated} notes mises à jour dans {scenes} scènes."
+	"poitp.backfill.doneNotification": "Backfill terminé: {updated} notes mises à jour dans {scenes} scènes."
 }

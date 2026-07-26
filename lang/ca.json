@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "La destinació no és al teu món. Instal·la Beneos Battlemaps Release {release} (Mapa {map}).",
 	"poitp.destinationInstallReleaseMapType": "La destinació no és al teu món. Instal·la Beneos Battlemaps Release {release} (Mapa {map}, {type}).",
 	"poitp.destinationInstallEscalia": "La destinació no és al teu món. Instal·la Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Instal·la el paquet que falta",
+	"poitp.installApiMissing": "Cal el mòdul Beneos per instal·lar aquest paquet.",
+	"poitp.installReadyNotice": "Llançament instal·lat. «{name}» ja està disponible; fes clic dret a la icona per viatjar-hi.",
+	"poitp.installNamedRelease": "Instal·la {title}",
+	"poitp.installNoDestination": "«{title}» està instal·lat, però no conté cap escena per a aquesta destinació. Comunica-ho a Beneos.",
+	"poitp.destReleaseLine": "{title} (llançament {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Escena: {scene}",
+	"poitp.destAlsoIn": "També disponible en {count} llançaments més",
+	"poitp.destUnknownRelease": "Beneos no ha pogut determinar quin llançament conté aquesta destinació.",
+	"poitp.destNumberHintOnly": "El nom suggereix el llançament {release} (sense verificar)",
+	"poitp.browseCloud": "Cerca al Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Clic esquerre per teletransportar els personatges",
 	"poitp.contentType.handout":       "Doble clic esquerre per obrir",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill completat",
 	"poitp.backfill.confirmTitle":"Executar backfill Beneos?",
 	"poitp.backfill.confirmBody": "Això escanejarà totes les escenes del món i escriurà flags de vinculació Beneos a totes les notes POI el journal de destinació de les quals coincideix amb el patró Beneos. Pot afectar moltes notes i trigar una estona. Continuar?",
-	"poitp.backfill.doneNotification": "Backfill completat — {updated} notes actualitzades en {scenes} escenes."
+	"poitp.backfill.doneNotification": "Backfill completat: {updated} notes actualitzades en {scenes} escenes."
 }

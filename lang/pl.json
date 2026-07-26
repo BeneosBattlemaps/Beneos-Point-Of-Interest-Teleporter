@@ -16,6 +16,18 @@
 	"poitp.destinationInstallReleaseMap": "Cel nie istnieje w tym świecie. Zainstaluj Beneos Battlemaps Release {release} (Mapa {map}).",
 	"poitp.destinationInstallReleaseMapType": "Cel nie istnieje w tym świecie. Zainstaluj Beneos Battlemaps Release {release} (Mapa {map}, {type}).",
 	"poitp.destinationInstallEscalia": "Cel nie istnieje w tym świecie. Zainstaluj Beneos Custom World Map: Escalia.",
+	"poitp.installMissingPack": "Zainstaluj brakujący pakiet",
+	"poitp.installApiMissing": "Do zainstalowania tego pakietu wymagany jest moduł Beneos.",
+	"poitp.installReadyNotice": "Wydanie zainstalowane. „{name}” jest już dostępne; kliknij ikonę prawym przyciskiem, aby tam przejść.",
+	"poitp.installNamedRelease": "Zainstaluj {title}",
+	"poitp.installNoDestination": "„{title}” jest zainstalowane, ale nie zawiera sceny dla tego celu. Zgłoś to do Beneos.",
+	"poitp.destReleaseLine": "{title} (wydanie {label})",
+	"poitp.destReleaseLineNoNum": "{title}",
+	"poitp.destSceneLine": "Scena: {scene}",
+	"poitp.destAlsoIn": "Dostępne także w {count} innych wydaniach",
+	"poitp.destUnknownRelease": "Beneos nie mógł ustalić, które wydanie zawiera ten cel.",
+	"poitp.destNumberHintOnly": "Nazwa sugeruje wydanie {release} (niezweryfikowane)",
+	"poitp.browseCloud": "Szukaj w Beneos Cloud",
 
 	"poitp.contentType.navigation":    "Kliknij lewym, aby teleportować postacie",
 	"poitp.contentType.handout":       "Kliknij dwukrotnie lewym, aby otworzyć",
@@ -72,5 +84,5 @@
 	"poitp.backfill.done":        "Backfill zakończony",
 	"poitp.backfill.confirmTitle":"Uruchomić backfill Beneos?",
 	"poitp.backfill.confirmBody": "To przeskanuje każdą scenę w świecie i zapisze flagi powiązania Beneos na wszystkich notatkach POI, których journal pasuje do wzorca Beneos. Może to dotyczyć wielu notatek i zająć trochę czasu. Kontynuować?",
-	"poitp.backfill.doneNotification": "Backfill zakończony — {updated} notatek zaktualizowanych w {scenes} scenach."
+	"poitp.backfill.doneNotification": "Backfill zakończony: {updated} notatek zaktualizowanych w {scenes} scenach."
 }
