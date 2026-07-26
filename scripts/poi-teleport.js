@@ -148,13 +148,69 @@ class PointOfInterestTeleporter {
 	 */
 	static resolveNoteJournal(entryId, pageId) {
 		if (entryId) return game.journal?.get(entryId) ?? null;
-		if (pageId) {
-			for (const entry of game.journal ?? []) {
-				if (entry.pages?.get?.(pageId)) return entry;
-			}
-		}
+		if (pageId) return this.journalByPage().get(pageId) ?? null;
 		return null;
 	}
+
+	/**
+	 * Lookup tables for the two world-wide searches this module used to run once
+	 * per map note.
+	 *
+	 * onReady checks every note on the scene at every canvasReady, and each check
+	 * scanned all of game.scenes to find the destination, plus all of game.journal
+	 * when the note targets a page rather than an entry. Measured in a world with
+	 * 2124 scenes: 1.38 ms per scan, so the busiest note scene (82 notes) paid
+	 * about 113 ms on every scene load, and that grows with the world.
+	 *
+	 * Both tables are built on first use and thrown away whenever the documents
+	 * they summarise change, so they cannot go stale.
+	 *
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static _scenesByJournalCache = null;
+	static _journalByPageCache = null;
+
+	/** @return {Map<string, Scene[]>} scenes keyed by the journal entry assigned to them */
+	static scenesByJournal() {
+		if (this._scenesByJournalCache) return this._scenesByJournalCache;
+		const map = new Map();
+		// Built in collection order so callers that take the first match keep
+		// picking the same scene as the previous game.scenes.filter did.
+		for (const scene of game.scenes ?? []) {
+			const id = scene.journal?.id;
+			if (!id) continue;
+			const bucket = map.get(id);
+			if (bucket) bucket.push(scene);
+			else map.set(id, [scene]);
+		}
+		this._scenesByJournalCache = map;
+		return map;
+	}
+
+	/**
+	 * @return {Map<string, JournalEntry>} the parent entry of every journal page
+	 *
+	 * First writer wins, deliberately. Page ids are not reliably unique across a
+	 * world: cloned and re-imported journals share them, and this world has 91
+	 * page ids owned by more than one entry, one of them by 72. The loop this
+	 * replaces returned the first entry in game.journal order that contained the
+	 * page, so keeping the first match is what keeps existing pins resolving to
+	 * the same journal they resolved to before.
+	 */
+	static journalByPage() {
+		if (this._journalByPageCache) return this._journalByPageCache;
+		const map = new Map();
+		for (const entry of game.journal ?? []) {
+			for (const page of entry.pages ?? []) {
+				if (!map.has(page.id)) map.set(page.id, entry);
+			}
+		}
+		this._journalByPageCache = map;
+		return map;
+	}
+
+	static invalidateSceneLookup() { this._scenesByJournalCache = null; }
+	static invalidateJournalLookup() { this._journalByPageCache = null; }
 
 	/**
 	 * Resolve the destination scene for a note reference. Shared by checkNote()
@@ -179,8 +235,8 @@ class PointOfInterestTeleporter {
 
 		// Every scene assigned this journal entry (page-linked scenes included,
 		// since scene.journal resolves to the parent entry).
-		const matches = game.scenes.filter(s => s.journal?.id === journal.id);
-		if (matches.length === 0) return null;
+		const matches = this.scenesByJournal().get(journal.id);
+		if (!matches?.length) return null;
 
 		// When the note targets a specific page and several scenes share the
 		// entry, prefer the scene linked to that exact page. scene.journalEntryPage
@@ -226,12 +282,7 @@ class PointOfInterestTeleporter {
 			journal = game.journal?.get(noteEntryId);
 		} else if (hasPageId) {
 			// Find journal that contains this page
-			for (const entry of game.journal ?? []) {
-				if (entry.pages?.get?.(notePageId)) {
-					journal = entry;
-					break;
-				}
-			}
+			journal = PointOfInterestTeleporter.journalByPage().get(notePageId) ?? null;
 		}
 
 		// Journal missing → only attach POI behaviour when the note is explicitly
@@ -384,10 +435,9 @@ class PointOfInterestTeleporter {
 		}
 		const pageId = this.note?.document?.pageId;
 		if (pageId) {
-			for (const entry of game.journal ?? []) {
-				const page = entry.pages?.get?.(pageId);
-				if (page) return `${entry.name} / ${page.name}`;
-			}
+			const entry = PointOfInterestTeleporter.journalByPage().get(pageId);
+			const page = entry?.pages?.get?.(pageId);
+			if (page) return `${entry.name} / ${page.name}`;
 		}
 
 		// Note text/label — last resort (human-readable label, usually not a release ID)
@@ -800,3 +850,18 @@ Hooks.on("renderHeadsUpDisplayContainer", (...args) => PointOfInterestTeleporter
 Hooks.on("canvasReady", () => PointOfInterestTeleporter.onReady());
 Hooks.on("createNote", (...args) => PointOfInterestTeleporter.createNote(...args));
 Hooks.on("updateNote", (...args) => PointOfInterestTeleporter.updateNote(...args));
+
+// Drop the lookup tables whenever the documents they summarise change. A scene's
+// journal assignment is the only thing the scene table depends on, and a page's
+// parent entry the only thing the journal table depends on, so the two are
+// invalidated independently and each rebuild stays cheap.
+Hooks.on("createScene", () => PointOfInterestTeleporter.invalidateSceneLookup());
+Hooks.on("updateScene", () => PointOfInterestTeleporter.invalidateSceneLookup());
+Hooks.on("deleteScene", () => PointOfInterestTeleporter.invalidateSceneLookup());
+Hooks.on("createJournalEntry", () => PointOfInterestTeleporter.invalidateJournalLookup());
+Hooks.on("updateJournalEntry", () => PointOfInterestTeleporter.invalidateJournalLookup());
+Hooks.on("deleteJournalEntry", () => PointOfInterestTeleporter.invalidateJournalLookup());
+// Pages are embedded, so their create/delete does not surface as a JournalEntry
+// update on every path. Watch them directly as well.
+Hooks.on("createJournalEntryPage", () => PointOfInterestTeleporter.invalidateJournalLookup());
+Hooks.on("deleteJournalEntryPage", () => PointOfInterestTeleporter.invalidateJournalLookup());
