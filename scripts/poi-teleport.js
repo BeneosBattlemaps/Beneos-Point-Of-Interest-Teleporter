@@ -1068,16 +1068,27 @@ Hooks.on("canvasReady", () => PointOfInterestTeleporter.onReady());
 Hooks.on("createNote", (...args) => PointOfInterestTeleporter.createNote(...args));
 Hooks.on("updateNote", (...args) => PointOfInterestTeleporter.updateNote(...args));
 
-// Drop the lookup tables whenever the documents they summarise change. A scene's
-// journal assignment is the only thing the scene table depends on, and a page's
-// parent entry the only thing the journal table depends on, so the two are
-// invalidated independently and each rebuild stays cheap.
+// Drop the lookup tables whenever the documents they summarise change. A page's
+// parent entry is the only thing the journal table depends on, so that one is
+// invalidated on its own and each rebuild stays cheap.
 Hooks.on("createScene", () => PointOfInterestTeleporter.invalidateSceneLookup());
 Hooks.on("updateScene", () => PointOfInterestTeleporter.invalidateSceneLookup());
 Hooks.on("deleteScene", () => PointOfInterestTeleporter.invalidateSceneLookup());
-Hooks.on("createJournalEntry", () => PointOfInterestTeleporter.invalidateJournalLookup());
+// The scene table keys on scene.journal?.id, and that getter resolves to null for
+// as long as the JournalEntry document is absent from the world. An install
+// creates Scene documents BEFORE JournalEntry documents, so a table built inside
+// that window silently omits every scene whose journal had not arrived yet, and
+// its teleporters report "destination not in your world" until the next reload.
+// Journal creation therefore invalidates the scene table as well.
+Hooks.on("createJournalEntry", () => {
+	PointOfInterestTeleporter.invalidateJournalLookup();
+	PointOfInterestTeleporter.invalidateSceneLookup();
+});
 Hooks.on("updateJournalEntry", () => PointOfInterestTeleporter.invalidateJournalLookup());
-Hooks.on("deleteJournalEntry", () => PointOfInterestTeleporter.invalidateJournalLookup());
+Hooks.on("deleteJournalEntry", () => {
+	PointOfInterestTeleporter.invalidateJournalLookup();
+	PointOfInterestTeleporter.invalidateSceneLookup();
+});
 // Pages are embedded, so their create/delete does not surface as a JournalEntry
 // update on every path. Watch them directly as well.
 Hooks.on("createJournalEntryPage", () => PointOfInterestTeleporter.invalidateJournalLookup());
