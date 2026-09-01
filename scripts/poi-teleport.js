@@ -626,6 +626,88 @@ class PointOfInterestTeleporter {
 	}
 
 	/**
+	 * Does the Beneos module answer "is THIS destination installed", rather than
+	 * only "does the registry know this release"?
+	 *
+	 * Capability 2 adds the destination's scene id and the graded verdict to the
+	 * resolution. Against a version-1 module those fields are simply absent, and
+	 * absent would read as "not recorded" in every test below. That is the exact
+	 * false accusation this gate exists to prevent, so the old single-sentence
+	 * behaviour stays in place until the module can back the new one up.
+	 *
+	 * @return {boolean}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static hasInstallVerdict() {
+		return Number(game.beneos?.api?.capabilities?.poiIndex) >= 2;
+	}
+
+	/**
+	 * Why is a release present and its destination still missing?
+	 *
+	 * Until 14.2.x there was one answer for all of them: "installed, but it
+	 * contains no scene for this destination. Please report this to Beneos."
+	 * Three of the four readings below are not a packaging defect at all, and
+	 * customers were being sent to file reports that were not reports.
+	 *
+	 *   unlinked     the scene document IS in the world, it just carries no link
+	 *                to this pin. The only reading that is ours to fix.
+	 *   partial      the install never brought this scene. A scene-scoped install
+	 *                writes the whole release dir with a single scene id, and its
+	 *                dependency closure pulls in the pins' JOURNALS without their
+	 *                target scenes. A stopped or skipped bundle run does the same.
+	 *   removed      the install brought it and it is gone since. The user's own
+	 *                deletion, not a defect.
+	 *   undecidable  the index is too old to name a scene id. Nothing beyond
+	 *                "not in your world" is provable, so nothing else is claimed.
+	 *
+	 * @param {object} r resolution from the Beneos module
+	 * @return {"unlinked"|"partial"|"removed"|"undecidable"}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	static installVerdict(r) {
+		if (r?.destinationInWorld === true) return "unlinked";
+		if (r?.destinationRecorded === false) return "partial";
+		if (r?.destinationRecorded === true) return "removed";
+		return "undecidable";
+	}
+
+	/**
+	 * The rows that explain why a release we already have still shows no
+	 * destination, plus whether they end the menu.
+	 *
+	 * `final: true` means no install is worth offering: either the module is too
+	 * old to say more than the old single sentence, or the scene is demonstrably
+	 * in the world and downloading it again would change nothing.
+	 *
+	 * @param {object} r resolution
+	 * @param {function(string): object} infoRow row factory of the caller
+	 * @return {{rows: ContextMenuOption[], final: boolean}}
+	 * @memberof PointOfInterestTeleporter
+	 */
+	_installedButMissingRows(r, infoRow) {
+		if (!PointOfInterestTeleporter.hasInstallVerdict()) {
+			// Module too old to tell the cases apart: unchanged behaviour.
+			return { rows: [infoRow(game.i18n.format("poitp.installNoDestination", { title: r.title }))], final: true };
+		}
+
+		const scene = r.sceneName || "";
+		switch (PointOfInterestTeleporter.installVerdict(r)) {
+			case "unlinked":
+				return { rows: [infoRow(game.i18n.format("poitp.destSceneUnlinked", { scene }))], final: true };
+			case "partial":
+				return { rows: [infoRow(game.i18n.format("poitp.destInstalledPartial", { title: r.title }))], final: false };
+			case "removed":
+				return { rows: [infoRow(game.i18n.format("poitp.destInstalledRemoved", { scene }))], final: false };
+			default:
+				// "undecidable" adds no sentence on purpose: the error row above
+				// already says the destination is not here, and nothing further is
+				// provable. The install offer is the useful part either way.
+				return { rows: [], final: false };
+		}
+	}
+
+	/**
 	 * Build the menu rows for a missing destination.
 	 *
 	 * Three states, and the difference between them is what the module actually
@@ -638,6 +720,11 @@ class PointOfInterestTeleporter {
 	 *
 	 * The number parsed from the journal name is never used to start a download.
 	 * It is a label, and in state C it is explicitly marked as unverified.
+	 *
+	 * Inside state A the release may already be present. That used to end the
+	 * menu with a request to report a bug; it now splits by installVerdict() and
+	 * keeps the install offer alive, because reinstalling is what actually fixes
+	 * the two ordinary cases.
 	 *
 	 * @return {ContextMenuOption[]}
 	 * @memberof PointOfInterestTeleporter
@@ -688,11 +775,12 @@ class PointOfInterestTeleporter {
 
 			if (r.sceneName) items.push(infoRow(game.i18n.format("poitp.destSceneLine", { scene: r.sceneName })));
 
-			// Release already present but still no destination scene: the pack does
-			// not contain what the pin needs. Say it instead of offering a re-install.
+			// Release already present but still no destination scene. Why decides
+			// both what we say and whether an install is worth offering.
 			if (r.installed) {
-				items.push(infoRow(game.i18n.format("poitp.installNoDestination", { title: r.title })));
-				return items;
+				const said = this._installedButMissingRows(r, infoRow);
+				items.push(...said.rows);
+				if (said.final) return items;
 			}
 
 			if (r.ambiguous) {
@@ -823,7 +911,7 @@ class PointOfInterestTeleporter {
 	 *
 	 * @memberof PointOfInterestTeleporter
 	 */
-	_refreshDestinationAfterInstall(result) {
+	async _refreshDestinationAfterInstall(result) {
 		// Drop the cached resolution: the world changed under us.
 		this._resolution = undefined;
 
@@ -842,14 +930,44 @@ class PointOfInterestTeleporter {
 		// Installed, and still no destination. Previously this returned silently,
 		// which is the worst possible outcome: the user has just downloaded
 		// gigabytes and gets no feedback at all. Say what happened.
+		//
+		// But "installed" here is weaker than it looks: installReleaseForTarget
+		// reports it as soon as the native install run RETURNS, and that run
+		// aborts cleanly when the user declines the overwrite confirmation. The
+		// resolution handed in is also older than the install. So re-ask, and let
+		// the fresh verdict decide whether this is our defect or the user's own
+		// choice not to overwrite.
+		const fresh = PointOfInterestTeleporter.hasInstallVerdict() ? await this._resolveTarget() : null;
+		if (fresh && PointOfInterestTeleporter.installVerdict(fresh) === "partial") {
+			// The run brought nothing for this destination. Not a defect, so no
+			// request to report it. But not silence either: staying quiet after a
+			// download is the failure mode 14.2.0 was written to end, and only the
+			// declined overwrite prompt is self-explanatory. A cut-short or skipped
+			// run leaves the user with no idea why the pin still does not work.
+			ui.notifications?.info(game.i18n.format("poitp.destInstalledPartial", { title: fresh.title || "" }));
+			return;
+		}
+
 		const title = result?.title || result?.releaseDir || this._resolveBeneosBinding().name || "";
 		console.warn("poi-teleport | install produced no destination", {
 			journalId: this.note?.document?.entryId ?? null,
 			journalName: this._resolveBeneosBinding().name ?? null,
 			releaseDir: result?.releaseDir ?? null,
 			resolvedBy: result?.resolvedBy ?? null,
-			indexVersion: result?.indexVersion ?? null
+			indexVersion: result?.indexVersion ?? null,
+			sceneId: fresh?.sceneId ?? result?.sceneId ?? null,
+			destinationRecorded: fresh?.destinationRecorded ?? null,
+			destinationInWorld: fresh?.destinationInWorld ?? null,
+			installedSceneCount: fresh?.installedSceneCount ?? null,
+			releaseSceneCount: fresh?.releaseSceneCount ?? null
 		});
+
+		// The scene document arrived but carries no link to this pin: name the
+		// scene, because that is the detail a report needs.
+		if (fresh && PointOfInterestTeleporter.installVerdict(fresh) === "unlinked") {
+			ui.notifications?.warn(game.i18n.format("poitp.destSceneUnlinked", { scene: fresh.sceneName || "" }));
+			return;
+		}
 		ui.notifications?.warn(game.i18n.format("poitp.installNoDestination", { title }));
 	}
 
