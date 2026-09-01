@@ -1,5 +1,15 @@
 # Changelog
 
+## v14.3.0 ## 2026-09-02: Why the Destination Is Missing
+
+- **Fixed:** A pin no longer asks you to report a bug when there is nothing wrong with the pack. 
+- **New:** The menu says why the destination is missing. 
+- **Fixed:** Where a re-install actually repairs the pin, the menu now offers it.
+- **Changed:** After you start an install from the menu and the destination still does not appear, the module asks again instead of trusting the answer it held before the download.
+- **Changed:** When the module cannot prove why the destination is missing, it says nothing about the reason and simply offers the release.
+- **Changed:** All of this needs Beneos module 14.4.8 to answer the question.
+- **New:** Three new messages, translated across all 13 supported languages.
+
 ## v14.2.0 ## 2026-07-26: Destinations Resolved by Identity
 
 - **Fixed:** The install hint no longer offers the wrong map. A pin used to be matched to a release by a number read out of its journal name, which is a label frozen when the pack was built. Where that label and the actual release had drifted apart, the hint named one release and the download delivered another, and the pin stayed broken afterwards. Destinations are now resolved by the identity of the target journal against an index built from the release packages themselves.
